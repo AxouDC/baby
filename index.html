@@ -1,0 +1,576 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Pronostics Bébé — v1.4 (Cloud)</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%); }
+    header{padding:24px 20px 8px; position:sticky; top:0; z-index:20; backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.6) 60%, rgba(15,18,24,0));}
+    h1{margin:0 0 6px; font-size:22px}
+    .sub{color:var(--muted); font-size:13px}
+    .wrap{padding:14px 20px 28px; display:grid; grid-template-columns: var(--left) 1fr; gap:16px; transition: grid-template-columns .2s ease;}
+    .wrap.wide{ --left: 800px; }
+    .card{background:var(--card); border-radius:var(--br); border:1px solid #232a36; box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset}
+    .card > .hd{padding:14px 16px; border-bottom:1px solid #232a36; font-weight:600; display:flex; align-items:center; gap:10px; justify-content:space-between;}
+    .card > .bd{padding:14px 16px}
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    input, select, button, textarea{ width:100%; padding:12px 14px; background:#0f131a; color:var(--text);
+      border:1px solid #2a3241; border-radius:10px; outline:none; font-size:15px; }
+    input::placeholder{color:#5b6574}
+    button{cursor:pointer; background:linear-gradient(180deg,#233146,#172232); border-color:#2f3a4d}
+    button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
+    button.ghost{background:transparent; border-color:#30384a}
+    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
+    .btns{display:flex; gap:8px; flex-wrap:wrap}
+    .grid{display:grid; gap:12px}
+    #form .grid{ grid-template-columns: 1fr; }
+    .kpis{display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:12px}
+    .kpi{padding:12px; background:#111620; border:1px solid #222a38; border-radius:12px}
+    .kpi b{display:block; font-size:22px; margin-top:6px}
+    table{width:100%; border-collapse:collapse; font-size:13px}
+    th, td{padding:8px 10px; border-bottom:1px solid #232a36; vertical-align:top}
+    th{position:sticky; top:0; background:#151a23; z-index:5}
+    tr:hover td{background:#121826}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
+    .muted{color:var(--muted)}
+    canvas{width:100% !important; height:280px !important}
+    .toolbar{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
+    .toolbar > *{flex:1 0 auto}
+    .note{font-size:12px; color:var(--muted); margin-top:6px}
+    .footer{padding:16px; color:#7e8a9a; font-size:12px; text-align:center}
+    .status{font-size:12px; color:#cbd5e1}
+    @media (max-width: 1200px){ .wrap{ --left: 600px; } }
+    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } .wrap.wide{ --left: auto; } .kpis{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Dashboard — Pronostics Bébé <span class="pill">v1.4 Cloud</span></h1>
+  <div class="sub">Même interface, mais les données sont synchronisées avec Google Sheets (<b>Pronostics</b>). URL backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+</header>
+
+<div class="wrap" id="wrap">
+  <section class="card">
+    <div class="hd">
+      <span>Données</span>
+      <div class="btns" style="gap:6px">
+        <button class="ghost" id="btnWiden" title="Agrandir/Rétrécir la colonne de saisie">↔️ Agrandir</button>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="toolbar">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <button class="primary" id="btnExport">Exporter CSV</button>
+        <button class="ghost" id="btnReset">Réinitialiser (local)</button>
+      </div>
+      <div class="toolbar">
+        <button class="primary" id="btnCloudLoad">Charger depuis Google Sheets</button>
+        <button id="btnCloudSave">Enregistrer vers Google Sheets</button>
+        <span class="status" id="cloudStatus"></span>
+      </div>
+      <div class="note">Saisie sur une seule colonne (large). La <b>Date</b> est sans heure (JJ/MM/AAAA à l’affichage/export).</div>
+
+      <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
+
+      <h3 style="margin:0 0 10px">Ajouter / éditer un pronostic</h3>
+      <form id="form">
+        <div class="grid">
+          <div>
+            <label for="fJoueur">Joueur</label>
+            <input id="fJoueur" placeholder="Nom ou pseudo" required />
+          </div>
+          <div>
+            <label for="fSexe">Sexe</label>
+            <select id="fSexe">
+              <option value="">—</option>
+              <option>Fille</option>
+              <option>Garçon</option>
+              <option>Indéterminé</option>
+            </select>
+          </div>
+          <div>
+            <label for="fPrenom">Prénom</label>
+            <input id="fPrenom" placeholder="Prénom pressenti" />
+          </div>
+          <div>
+            <label for="fTaille">Taille (cm)</label>
+            <input id="fTaille" type="number" step="1" min="40" max="65" placeholder="ex. 51" />
+          </div>
+          <div>
+            <label for="fPoidsKg">Poids (kg)</label>
+            <input id="fPoidsKg" type="number" step="0.001" min="2" max="6" placeholder="ex. 3.280" />
+          </div>
+          <div>
+            <label for="fDate">Date</label>
+            <input id="fDate" type="date" />
+          </div>
+        </div>
+        <div class="btns" style="margin-top:10px">
+          <button type="submit" class="primary">Enregistrer</button>
+          <button type="button" id="btnCancel" class="ghost">Annuler</button>
+          <span class="pill" id="editFlag" style="display:none">Mode édition</span>
+        </div>
+      </form>
+
+      <div class="note">Astuce : double‑clique une ligne du tableau pour l’éditer.</div>
+      <div class="note" id="importLog" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd">Vue d’ensemble</div>
+    <div class="bd">
+      <div class="kpis">
+        <div class="kpi"><span class="muted">Entrées</span> <b id="kpiCount">0</b></div>
+        <div class="kpi"><span class="muted">Poids moyen (kg)</span> <b id="kpiPoids">—</b></div>
+        <div class="kpi"><span class="muted">Taille moyenne (cm)</span> <b id="kpiTaille">—</b></div>
+        <div class="kpi"><span class="muted">Sexe majoritaire</span> <b id="kpiSexe">—</b></div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:12px">
+        <div class="card">
+          <div class="hd">Répartition Fille / Garçon</div>
+          <div class="bd"><canvas id="chartSexe"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="hd">Histogramme du poids (g)</div>
+          <div class="bd"><canvas id="chartPoids"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="hd">Pronostics par date</div>
+          <div class="bd"><canvas id="chartDates"></canvas></div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="search" placeholder="Rechercher…" />
+        <select id="sortBy">
+          <option value="">Tri (aucun)</option>
+          <option value="Date">Date</option>
+          <option value="Poids (kg)">Poids (kg)</option>
+          <option value="Taille (cm)">Taille (cm)</option>
+          <option value="Joueur">Joueur</option>
+          <option value="Sexe">Sexe</option>
+        </select>
+        <button id="btnAddRow">Ajouter</button>
+        <button id="btnDeleteSel" class="danger">Supprimer sélection</button>
+      </div>
+
+      <div class="card" style="border:none">
+        <div class="bd" style="padding:0">
+          <div style="max-height:420px; overflow:auto; border-top-left-radius:12px; border-top-right-radius:12px">
+            <table id="tbl">
+              <thead>
+                <tr>
+                  <th style="width:28px"><input type="checkbox" id="chkAll"></th>
+                  <th>Joueur</th>
+                  <th>Sexe</th>
+                  <th>Prénom</th>
+                  <th>Taille (cm)</th>
+                  <th>Poids (kg)</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<div class="footer">Données synchronisées via Google Apps Script & Google Sheets. LocalStorage utilisé en cache. Aucun compte sur le dashboard.</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+(function(){
+  const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec";
+  const COLS = ["Joueur","Sexe","Prénom","Taille (cm)","Poids (kg)","Date"];
+  let rows = []; let filtered = []; let editIndex = null;
+  let charts = {sexe:null, poids:null, dates:null};
+
+  const el = sel => document.querySelector(sel);
+  const fmt = {
+    kg: v => (isFinite(v)? (Math.round(v*1000)/1000).toFixed(3) : ""),
+    cm: v => (isFinite(v)? Math.round(v) : ""),
+    date: v => {
+      if(!v) return "";
+      const d = new Date(v);
+      if(isNaN(d)) return String(v);
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const yyyy = d.getFullYear();
+      return dd + "/" + mm + "/" + yyyy;
+    },
+  };
+  const isBlank = (v) => v==null || (typeof v==="string" && v.trim()==="");
+
+  function saveLocal(){ localStorage.setItem("pronostics_bebe_cloud_v14", JSON.stringify(rows)); }
+  function loadLocal(){ try{ const s=localStorage.getItem("pronostics_bebe_cloud_v14"); if(s) rows=JSON.parse(s); }catch(e){} }
+
+  function normalizeSexe(s){
+    if(!s) return "";
+    const x = String(s).trim().toLowerCase();
+    if(x.startsWith("f")) return "Fille";
+    if(x.startsWith("g")) return "Garçon";
+    return s;
+  }
+  function parseNumber(n){
+    if(n===null || n===undefined || n==="") return null;
+    const v = String(n).replace(",", ".").replace(/[^0-9.\-]/g,"");
+    const f = parseFloat(v);
+    return isFinite(f) ? f : null;
+  }
+  function isHeaderRow(obj){
+    const keys = COLS.filter(k => Object.prototype.hasOwnProperty.call(obj,k));
+    if(keys.length < 2) return false;
+    let matches = 0;
+    for(const k of COLS){
+      const v = obj[k];
+      if(typeof v === "string" && v.trim().toLowerCase() === k.toLowerCase()) matches++;
+    }
+    return matches >= 2;
+  }
+  function isSummaryRow(obj){
+    const tokens = ["POIDS MOYEN","DATE MOYENNE","TAILLE MOYENNE","SEXE MAJORITAIRE"];
+    const hasToken = Object.values(obj).some(val => typeof val === "string" && tokens.some(t => val.toUpperCase().includes(t)));
+    const nonEmptyMain = COLS.reduce((acc,k)=> acc + (!isBlank(obj[k])?1:0), 0);
+    return hasToken && nonEmptyMain <= 1;
+  }
+  function isEmptyCore(obj){
+    return COLS.every(k => {
+      const v = obj[k];
+      if(v==null) return true;
+      if(typeof v === "number") return !isFinite(v);
+      if(typeof v === "string") return v.trim()==="";
+      return false;
+    });
+  }
+  function parseDateAny(d){
+    if(d==null || d==="") return "";
+    if(typeof d==="number"){ const excelEpoch = new Date(Date.UTC(1899,11,30)); return new Date(excelEpoch.getTime() + d * 86400000).toISOString(); }
+    const try1 = new Date(d);
+    if(!isNaN(try1)) return try1.toISOString();
+    const m = String(d).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m){ const [_,dd,mm,yyyy]=m; return new Date(Number(yyyy), Number(mm)-1, Number(dd)).toISOString(); }
+    return "";
+  }
+
+  function cleanAndNormalize(arr){
+    return arr
+      .filter(obj => obj && typeof obj==="object")
+      .filter(obj => !isHeaderRow(obj) && !isSummaryRow(obj) && !isEmptyCore(obj))
+      .map(obj => {
+        const out = {};
+        out["Joueur"] = (obj["Joueur"]??"").toString().trim();
+        out["Sexe"] = normalizeSexe(obj["Sexe"]);
+        out["Prénom"] = (obj["Prénom"]??"").toString().trim();
+        out["Taille (cm)"] = parseNumber(obj["Taille (cm)"]);
+        out["Poids (kg)"] = parseNumber(obj["Poids (kg)"]);
+        out["Date"] = parseDateAny(obj["Date"]);
+        return out;
+      });
+  }
+
+  function renderTable(){
+    const tb = el("#tbl tbody");
+    tb.innerHTML = "";
+    filtered.forEach((r, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="checkbox" data-idx="${i}"></td>
+        <td>${escapeHtml(r["Joueur"])}</td>
+        <td>${escapeHtml(r["Sexe"]||"")}</td>
+        <td>${escapeHtml(r["Prénom"]||"")}</td>
+        <td>${fmt.cm(r["Taille (cm)"])}</td>
+        <td>${fmt.kg(r["Poids (kg)"])}</td>
+        <td>${fmt.date(r["Date"])}</td>
+      `;
+      tr.ondblclick = () => startEdit(findGlobalIndex(i));
+      tb.appendChild(tr);
+    });
+    el("#kpiCount").textContent = String(rows.length);
+  }
+  function escapeHtml(s){
+    return String(s??"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  }
+  function filterAndSort(){
+    const q = el("#search").value.trim().toLowerCase();
+    const sortKey = el("#sortBy").value;
+    filtered = rows.filter(r => {
+      if(!q) return true;
+      return COLS.some(k => (r[k]??"").toString().toLowerCase().includes(q));
+    });
+    if(sortKey){
+      filtered.sort((a,b)=>{
+        const va = a[sortKey], vb = b[sortKey];
+        if(sortKey==="Date"){
+          return (a["Date"]||"").localeCompare(b["Date"]||"");
+        } else {
+          if(typeof va==="number" && typeof vb==="number") return va - vb;
+          return (va??"").toString().localeCompare((vb??"").toString(), "fr");
+        }
+      });
+    }
+  }
+  function startEdit(globalIdx){
+    if(globalIdx==null) return;
+    editIndex = globalIdx;
+    const r = rows[globalIdx];
+    el("#fJoueur").value = r["Joueur"] || "";
+    el("#fSexe").value = r["Sexe"] || "";
+    el("#fPrenom").value = r["Prénom"] || "";
+    el("#fTaille").value = r["Taille (cm)"] ?? "";
+    el("#fPoidsKg").value = r["Poids (kg)"] ?? "";
+    el("#fDate").value = r["Date"] ? toInputDate(new Date(r["Date"])) : "";
+    el("#editFlag").style.display = "inline-block";
+    el("#fJoueur").focus();
+  }
+  function cancelEdit(){
+    editIndex = null;
+    el("#form").reset();
+    el("#editFlag").style.display = "none";
+  }
+  function toInputDate(d){
+    const pad = n => String(n).padStart(2,"0");
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  }
+
+  function submitForm(e){
+    e.preventDefault();
+    const dateStr = el("#fDate").value;
+    const iso = dateStr ? new Date(dateStr+"T12:00:00").toISOString() : "";
+    const obj = {
+      "Joueur": el("#fJoueur").value.trim(),
+      "Sexe": normalizeSexe(el("#fSexe").value),
+      "Prénom": el("#fPrenom").value.trim(),
+      "Taille (cm)": parseNumber(el("#fTaille").value),
+      "Poids (kg)": parseNumber(el("#fPoidsKg").value),
+      "Date": iso
+    };
+    if(editIndex!=null){ rows[editIndex] = obj; } else { rows.push(obj); }
+    saveLocal(); cancelEdit(); refresh();
+  }
+
+  function deleteSelected(){
+    const checks = Array.from(document.querySelectorAll('#tbl tbody input[type="checkbox"]'));
+    const toDeleteGlobal = checks.filter(c=>c.checked).map(c=> findGlobalIndex(parseInt(c.dataset.idx,10))).filter(i=>i!=null);
+    if(!toDeleteGlobal.length) return;
+    rows = rows.filter((_,i)=> !toDeleteGlobal.includes(i));
+    saveLocal(); refresh();
+  }
+  function findGlobalIndex(filteredIdx){
+    const target = filtered[filteredIdx];
+    if(!target) return null;
+    return rows.indexOf(target);
+  }
+
+  function computeStats(){
+    const nums = (key)=> rows.map(r=>r[key]).filter(v=>typeof v==="number" && isFinite(v));
+    const poids = nums("Poids (kg)"); const taille = nums("Taille (cm)");
+    const avg = arr => arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+    el("#kpiPoids").textContent = avg(poids)!=null ? fmt.kg(avg(poids)) : "—";
+    el("#kpiTaille").textContent = avg(taille)!=null ? fmt.cm(avg(taille)) : "—";
+    const c = {Fille:0, "Garçon":0, Autre:0};
+    rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") c.Fille++; else if(s==="Garçon") c["Garçon"]++; else c.Autre++; });
+    let maj = "—";
+    if(c.Fille || c["Garçon"] || c.Autre){
+      const pairs = Object.entries(c).sort((a,b)=>b[1]-a[1]);
+      maj = pairs[0][1]===pairs[1]?.[1] ? "Égalité" : (pairs[0][0]==="Autre"?"—":pairs[0][0]);
+    }
+    el("#kpiSexe").textContent = maj;
+  }
+
+  function buildCharts(){
+    if(charts.sexe) charts.sexe.destroy();
+    if(charts.poids) charts.poids.destroy();
+    if(charts.dates) charts.dates.destroy();
+
+    const counts = {Fille:0, "Garçon":0, Autre:0};
+    rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; else counts.Autre++; });
+    charts.sexe = new Chart(document.getElementById("chartSexe"), {
+      type: "pie",
+      data: { labels: ["Fille","Garçon","Autre/—"], datasets: [{ data: [counts.Fille, counts["Garçon"], counts.Autre] }] },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
+
+    const poidsG = rows.map(r=> (typeof r["Poids (kg)"]==="number" ? Math.round(r["Poids (kg)"]*1000) : null)).filter(v=>v!=null);
+    const ctxPoids = document.getElementById("chartPoids");
+    if(poidsG.length){
+      poidsG.sort((a,b)=>a-b);
+      const binsize = 100; const minv = Math.min(...poidsG); const maxv = Math.max(...poidsG);
+      const labels = []; const values = [];
+      for(let x = Math.floor(minv/binsize)*binsize; x <= Math.ceil(maxv/binsize)*binsize; x+=binsize){
+        const next = x+binsize; labels.push(f"{x}–{next}g");
+        values.push(poidsG.filter(v=> v>=x && v<next).length);
+      }
+      charts.poids = new Chart(ctxPoids, {
+        type: "bar",
+        data: { labels, datasets: [{ label:"Poids (g)", data: values }] },
+        options: { plugins:{ legend:{display:false} }, scales: { y: { beginAtZero:true } } }
+      });
+    } else {
+      charts.poids = new Chart(ctxPoids, { type: "bar", data: { labels:["—"], datasets: [{ data:[0] }] }, options: { plugins:{ legend:{display:false} } } });
+    }
+
+    const perDay = {};
+    rows.forEach(r=>{
+      if(r["Date"]){
+        const d = new Date(r["Date"]);
+        const k = d.toISOString().slice(0,10);
+        perDay[k] = (perDay[k]||0)+1;
+      }
+    });
+    const dlabs = Object.keys(perDay).sort();
+    const dvals = dlabs.map(k=>perDay[k]);
+    charts.dates = new Chart(document.getElementById("chartDates"), {
+      type: "bar",
+      data: { labels: dlabs.length ? dlabs : ["—"], datasets: [{ label:"Pronostics", data: dvals.length? dvals : [0] }] },
+      options: { plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } }
+    });
+  }
+
+  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; }
+
+  document.getElementById("fileInput").addEventListener("change", async (ev)=>{
+    const file = ev.target.files[0]; if(!file) return;
+    document.getElementById("search").value = ""; document.getElementById("sortBy").value = "";
+    const ext = file.name.split(".").pop().toLowerCase();
+    let imported = 0;
+    try{
+      if(ext==="csv"){
+        const txt = await file.text();
+        const arr = csvToObjects(txt); imported = arr.length; rows = cleanAndNormalize(arr);
+      } else {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, {type:"array"});
+        const first = wb.SheetNames[0];
+        const sheet = wb.Sheets[first];
+        const arr = XLSX.utils.sheet_to_json(sheet, {defval:null}); imported = arr.length; rows = cleanAndNormalize(arr);
+      }
+      document.getElementById("importLog").textContent = `Import local : ${imported} lignes lues, ${rows.length} retenues.`;
+    } catch(err){
+      console.error(err); document.getElementById("importLog").textContent = "Erreur d'import : " + err.message;
+    }
+    saveLocal(); refresh();
+  });
+
+  document.getElementById("btnExport").addEventListener("click", ()=>{
+    const csv = toCSV(rows);
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "pronostics_bebe.csv"; a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("btnReset").addEventListener("click", ()=>{
+    if(confirm("Effacer les données locales (cache) ?")) { rows = []; localStorage.removeItem("pronostics_bebe_cloud_v14"); document.getElementById("importLog").textContent = ""; refresh(); }
+  });
+
+  document.getElementById("chkAll").addEventListener("change", (e)=>{ document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = e.target.checked); });
+  document.getElementById("btnDeleteSel").addEventListener("click", deleteSelected);
+
+  document.getElementById("search").addEventListener("input", ()=>{ filterAndSort(); renderTable(); });
+  document.getElementById("sortBy").addEventListener("change", ()=>{ filterAndSort(); renderTable(); });
+
+  document.getElementById("form").addEventListener("submit", submitForm);
+  document.getElementById("btnCancel").addEventListener("click", cancelEdit);
+  document.getElementById("btnAddRow").addEventListener("click", ()=>{ cancelEdit(); document.getElementById("fJoueur").focus(); });
+
+  document.getElementById("btnWiden").addEventListener("click", ()=>{ document.getElementById("wrap").classList.toggle("wide"); });
+
+  document.getElementById("btnCloudLoad").addEventListener("click", loadFromCloud);
+  document.getElementById("btnCloudSave").addEventListener("click", saveToCloud);
+
+  async function loadFromCloud(){
+    setCloudStatus("Chargement…");
+    try {
+      const res = await fetch(CLOUD_URL, { method:"GET", cache:"no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if(!data.rows) throw new Error("Réponse invalide");
+      rows = cleanAndNormalize(data.rows);
+      saveLocal(); refresh();
+      setCloudStatus(`Chargé (${rows.length} lignes).`);
+    } catch(e){
+      console.error(e); setCloudStatus("Erreur de chargement : " + e.message, true);
+    }
+  }
+  async function saveToCloud(){
+    setCloudStatus("Enregistrement…");
+    try {
+      const payload = {
+        rows: rows.map(r => ({ 
+          "Joueur": r["Joueur"]||"",
+          "Sexe": r["Sexe"]||"",
+          "Prénom": r["Prénom"]||"",
+          "Taille (cm)": r["Taille (cm)"]??"",
+          "Poids (kg)": r["Poids (kg)"]??"",
+          "Date": r["Date"] ? fmt.date(r["Date"]) : ""
+        }))
+      };
+      const res = await fetch(CLOUD_URL, {
+        method:"POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if(!data.ok) throw new Error("Réponse invalide");
+      setCloudStatus("Enregistré ✅");
+    } catch(e){
+      console.error(e); setCloudStatus("Erreur d'enregistrement : " + e.message, true);
+    }
+  }
+  function setCloudStatus(msg, isErr=false){
+    const elS = document.getElementById("cloudStatus");
+    elS.textContent = msg;
+    elS.style.color = isErr ? "#ffb4b4" : "#cbd5e1";
+  }
+
+  function toCSV(arr){
+    const cols = COLS; const esc = s => `"` + String(s??"").replace(/"/g,'""') + `"`;
+    const lines = [ cols.join(",") ];
+    arr.forEach(r=>{
+      const obj = Object.assign({}, r);
+      const cells = cols.map(k => k==="Date" ? fmt.date(obj[k]) : obj[k]);
+      lines.push(cells.map(esc).join(","));
+    });
+    return lines.join("\\n");
+  }
+  function csvToObjects(csv){
+    const lines = csv.split(/\\r?\\n/).filter(l=>l.trim().length);
+    const headers = lines[0].split(",").map(h=>h.trim());
+    return lines.slice(1).map(line=>{
+      const values = parseCsvLine(line);
+      const obj = {}; headers.forEach((h,i)=> obj[h] = values[i] ?? null);
+      return obj;
+    });
+  }
+  function parseCsvLine(line){
+    const out = []; let cur = ""; let inQ=false;
+    for(let i=0;i<line.length;i++){ const ch = line[i];
+      if(inQ){ if(ch === '"'){ if(line[i+1] === '"'){ cur+='"'; i++; } else { inQ=false; } } else cur += ch; }
+      else { if(ch === '"') inQ=true; else if(ch === ","){ out.push(cur); cur=""; } else cur += ch; }
+    }
+    out.push(cur); return out;
+  }
+
+  (async function init(){
+    loadLocal();
+    refresh();
+    await loadFromCloud();
+  })();
+})();
+</script>
+</body>
+</html>
