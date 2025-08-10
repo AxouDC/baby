@@ -1,188 +1,188 @@
-<!DOCTYPE html>
+	<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Pronostics Bébé — v5.6 (propre)</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <title>Pronostics — La maison Rose (v5.9)</title>
   <style>
-    :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{ margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%); }
-    header{padding:16px 20px; position:sticky; top:0; z-index:30; backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.6) 60%, rgba(15,18,24,0)); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
-    h1{margin:0; font-size:20px}
-    .sub{color:var(--muted); font-size:12px}
-    .spacer{flex:1}
-    .wrap{padding:14px 20px 28px; display:grid; grid-template-columns: var(--left) 1fr; gap:16px; transition: grid-template-columns .2s ease;}
-    .wrap.collapsed{ grid-template-columns: 1fr; }
-    .wrap.collapsed #panelLeft{ display:none; }
-    .card{background:var(--card); border-radius:var(--br); border:1px solid #232a36; box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset}
-    .card > .hd{padding:14px 16px; border-bottom:1px solid #232a36; font-weight:600; display:flex; align-items:center; gap:10px; justify-content:space-between;}
-    .card > .bd{padding:14px 16px}
-    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
-    input, select, button, textarea{ width:100%; padding:12px 14px; background:#0f131a; color:var(--text);
-      border:1px solid #2a3241; border-radius:10px; outline:none; font-size:15px; }
-    input::placeholder{color:#5b6574}
-    button{cursor:pointer; background:linear-gradient(180deg,#233146,#172232); border-color:#2f3a4d}
-    button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
-    button.ghost{background:transparent; border-color:#30384a}
-    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c3c); border-color:#963c3c}
-    button[disabled]{opacity:.6; cursor:not-allowed}
-    .btns{display:flex; gap:8px; flex-wrap:wrap}
-    .grid{display:grid; gap:12px}
-    #form .grid{ grid-template-columns: 1fr; }
-    .kpis{display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:12px}
-    .kpi{padding:12px; background:#111620; border:1px solid #222a38; border-radius:12px}
-    .kpi b{display:block; font-size:22px; margin-top:6px}
-    table{width:100%; border-collapse:collapse; font-size:13px}
-    th, td{padding:8px 10px; border-bottom:1px solid #232a36; vertical-align:top}
-    th{position:sticky; top:0; background:#151a23; z-index:5}
-    tr:hover td{background:#121826}
-    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
-    .muted{color:var(--muted)}
-    .toolbar{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
-    .toolbar > *{flex:1 0 auto}
-    .note{font-size:12px; color:#9fb0c7; margin-top:6px}
-    .status{font-size:12px; color:#cbd5e1}
-    .toggle-wrap{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .chips{display:flex; flex-wrap:wrap; gap:8px}
-    .chip{padding:6px 10px; border:1px solid #273245; border-radius:999px; background:#0f1722; font-size:13px}
-    .section-title{font-weight:600; margin:12px 0 8px; color:#c9d4e3}
-    .flex2{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
-    /* Toasts */
-    #toastContainer{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:9999}
-    .toast{min-width:240px; max-width:360px; padding:12px 14px; border-radius:10px; color:#0b111a; background:#d1fae5; border:1px solid #10b981; box-shadow:0 8px 26px rgba(0,0,0,.35); font-size:14px}
-    .toast.err{ background:#fee2e2; border-color:#ef4444; }
-    .toast .small{ display:block; font-size:12px; color:#111827; opacity:.7; margin-top:4px }
-
-    /* Modal lock */
-    #lockMask{ position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter: blur(4px); display:none; align-items:center; justify-content:center; z-index:9998 }
-    #lockCard{ background:#111620; border:1px solid #232a36; border-radius:12px; padding:18px; width:clamp(280px, 40vw, 420px) }
-    #lockCard h3{ margin:0 0 6px }
-    #lockCard .muted{ display:block; margin-bottom:10px }
-    #lockCard input{ text-align:center; letter-spacing:4px; font-weight:700; font-size:18px }
-
-    /* Chart sizing */
-    .chartBox{height:300px; padding:8px}
-    canvas{width:100% !important; height:100% !important}
+  :root{
+    --bg:#fff7fa; --bg1:#fff1f6; --bg2:#ffeaf2;
+    --card:#ffffff; --text:#3a2a30; --muted:#7b5f6a; --border:#efd7e5;
+    --accent:#e470a2; --accent2:#f19ac0; --br:14px;
+    --shadow:0 14px 40px rgba(223,130,170,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 800px at 10% -10%, var(--bg1) 0, rgba(255,255,255,0) 60%),
+      radial-gradient(1200px 800px at 110% -10%, var(--bg2) 0, rgba(255,255,255,0) 55%),
+      var(--bg);
+  }
+  header{
+    position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;
+    padding:14px 18px;
+    background:linear-gradient(180deg, rgba(255,247,250,.92), rgba(255,247,250,.7) 70%, rgba(255,247,250,0));
+    border-bottom:1px solid var(--border);
+    backdrop-filter: blur(6px);
+  }
+  h1{margin:0;font-size:20px}
+  header .spacer{flex:1}
+  a.btn-ghost{
+    text-decoration:none;color:var(--text);
+    padding:8px 12px;border-radius:10px;border:1px solid var(--border);
+    background:linear-gradient(180deg,#ffe9f3,#ffe2ee); font-size:14px
+  }
+  button.ghost{
+    text-decoration:none;color:var(--text);
+    padding:8px 12px;border-radius:10px;border:1px solid var(--border);
+    background:linear-gradient(180deg,#ffe9f3,#ffe2ee); font-size:14px
+  }
+  button.primary{
+    border:1px solid var(--accent);
+    background:linear-gradient(180deg,var(--accent2),var(--accent));
+    color:#fff;border-radius:10px;padding:10px 12px
+  }
+  button.danger{
+    background:linear-gradient(180deg,#ffd5df,#ffb6c7);
+    border:1px solid #f3a1b4;border-radius:10px;padding:10px 12px
+  }
+  input,select{
+    width:100%;padding:12px 14px;border:1px solid var(--border);
+    border-radius:10px;background:#fff7fb;color:var(--text)
+  }
+  .wrap{padding:14px 20px 28px;display:grid;grid-template-columns:520px 1fr;gap:16px;transition:grid-template-columns .2s}
+  .wrap.collapsed{grid-template-columns:1fr}
+  .wrap.collapsed #panelLeft{display:none}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--br);box-shadow:var(--shadow)}
+  .card > .hd{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;display:flex;align-items:center;gap:10px;justify-content:space-between}
+  .card > .bd{padding:14px 16px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+  .kpi{padding:12px;background:#fff;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{position:sticky;top:0;background:#fff7fb;z-index:5}
+  tr:hover td{background:#fff1f6}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff1f7;font-size:13px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#fff1f6;border:1px solid var(--border);color:#8c5b70;font-size:12px}
+  #toastContainer{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+  .toast{min-width:240px;max-width:360px;padding:12px 14px;border-radius:10px;color:#2b181d;background:#ffeef4;border:1px solid #f4cade;box-shadow:var(--shadow);font-size:14px}
+  .toast.err{background:#fff0f0;border-color:#f3b6b6}
+  #lockMask{position:fixed;inset:0;background:rgba(255,210,230,.45);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:9998}
+  #lockCard{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;width:clamp(280px,40vw,420px)}
+  .chartBox{height:300px;padding:8px}
+  canvas{width:100% !important;height:100% !important}
+  .status{font-size:12px;color:var(--muted)}
+  /* === KPIs : même format que l’ancienne page === */
+.kpis{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap:12px;
+  margin-bottom:12px;
+}
+.kpi{
+  padding:12px 14px;
+  background:#fff;                 /* fond clair (rose pâle global conserve le thème) */
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow: var(--shadow);
+}
+.kpi > span.muted{
+  font-size:12px;
+  color: var(--muted);
+}
+.kpi > b{
+  display:block;
+  margin-top:6px;
+  font-size:22px;                   /* taille identique à l’ancienne */
+  font-weight:700;
+  color: var(--text);
+}
   </style>
 </head>
 <body>
 <header>
-  <h1>Pronostics Bébé Alex&Julie</h1>
-    <a href="https://axoudc.github.io/lamaisonrose/" class="ghost" 
-       style="margin-left:auto; text-decoration:none; padding:8px 12px; border:1px solid #2b3447; border-radius:8px; background:linear-gradient(180deg,#182235,#121a29); color:inherit; font-size:14px;">
-      🏠 Accueil
-    </a>
+  <h1>Pronostics de bébé <span class="pill">La maison Rose</span></h1>
   <div class="spacer"></div>
+  <a class="btn-ghost" href="https://axoudc.github.io/lamaisonrose/" target="_self">🏠 Accueil</a>
 </header>
 
-<!-- Par défaut: panneau FERMÉ -->
 <div class="wrap collapsed" id="wrap">
-  <!-- Colonne gauche : Cloud + Form (protégés) -->
   <section class="card" id="panelLeft">
     <div class="hd">
-      <div class="toggle-wrap"><center>
-        <button class="ghost" id="btnTogglePanel" title="Masquer/Afficher ce panneau">Masquer le panneau</button>
-		
-        <button class="primary" id="btnUnlock">Déverrouiller la saisie</button>
-      </center></div>
+      <span>Données (Google Sheets)</span>
+      <div>
+        <button class="ghost" id="btnTogglePanel" onclick="togglePanel()">Masquer le panneau</button>
+        <button class="primary" id="btnUnlock" onclick="openLock()">Déverrouiller la saisie</button>
+      </div>
     </div>
     <div class="bd">
-      <div class="toolbar">
-        <button class="primary" id="btnCloudLoad">Charger depuis Google Sheets</button>
-        <button id="btnCloudSave">Enregistrer vers Google Sheets</button>
-        <span class="status" id="cloudStatus"></span>
+      <div class="status" id="cloudStatus"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px">
+        <button class="primary" id="btnCloudLoad" onclick="loadFromCloud()">Charger depuis Google Sheets</button>
+        <button id="btnCloudSave" onclick="saveToCloud()">Enregistrer vers Google Sheets</button>
       </div>
-
-      <div class="note">Mode sécurisé : seuls Alex & Julie peuvent modifier/ajouter/supprimer.</div>
-
-      <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
-
-      <h3 style="margin:0 0 10px">Ajouter / éditer un pronostic</h3>
-      <form id="form">
-        <div class="grid">
-          <div>
-            <label for="fJoueur">Joueur</label>
-            <input id="fJoueur" placeholder="Nom ou pseudo" required />
+      <div class="pill">Par défaut, la saisie est verrouillée (code requis)</div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
+      <form id="form" onsubmit="return submitForm(event)">
+        <div class="grid" style="display:grid;gap:12px">
+          <div><label>Joueur</label><input id="fJoueur" required placeholder=""></div>
+          <div><label>Sexe</label>
+            <select id="fSexe"><option value="">—</option><option>Fille</option><option>Garçon</option><option>Indéterminé</option></select>
           </div>
-          <div>
-            <label for="fSexe">Sexe</label>
-            <select id="fSexe">
-              <option value="">—</option>
-              <option>Fille</option>
-              <option>Garçon</option>
-              <option>Indéterminé</option>
-            </select>
-          </div>
-          <div>
-            <label for="fPrenom">Prénom</label>
-            <input id="fPrenom" placeholder="Prénom pressenti" />
-          </div>
-          <div>
-            <label for="fTaille">Taille (cm)</label>
-            <input id="fTaille" type="number" step="1" min="40" max="65" placeholder="ex. 51" />
-          </div>
-          <div>
-            <label for="fPoidsKg">Poids (kg)</label>
-            <input id="fPoidsKg" type="number" step="0.001" min="2" max="6" placeholder="ex. 3.280" />
-          </div>
-          <div>
-            <label for="fDate">Date</label>
-            <input id="fDate" type="date" />
-          </div>
+          <div><label>Prénom(s)</label><input id="fPrenom" placeholder=""></div>
+          <div><label>Taille (cm)</label><input id="fTaille" type="number" step="1" min="35" max="65" placeholder=""></div>
+          <div><label>Poids (kg)</label><input id="fPoidsKg" type="number" step="0.001" min="2" max="6" placeholder=""></div>
+          <div><label>Date</label><input id="fDate" type="date"></div>
         </div>
-        <div class="btns" style="margin-top:10px">
+        <div style="display:flex;gap:8px;margin-top:10px">
           <button type="submit" class="primary">Enregistrer dans le tableau</button>
-          <button type="button" id="btnCancel" class="ghost">Annuler</button>
+          <button type="button" id="btnCancel" class="ghost" onclick="cancelEdit()">Annuler</button>
           <span class="pill" id="editFlag" style="display:none">Mode édition</span>
         </div>
       </form>
     </div>
   </section>
 
-  <!-- Colonne droite : Stats + Tableau -->
   <section class="card" id="panelRight">
     <div class="hd">
       <span>Vue d’ensemble</span>
-      <!-- bouton visible quand le panneau est fermé -->
-      <button class="ghost" id="btnShowPanel">Afficher le panneau de saisie</button>
+      <button class="ghost" id="btnShowPanel" onclick="showPanel()">Afficher le panneau de saisie</button>
     </div>
     <div class="bd">
       <div class="kpis">
-        <div class="kpi"><span class="muted">Participants</span> <b id="kpiCount">0</b></div>
-        <div class="kpi"><span class="muted">Poids moyen (kg)</span> <b id="kpiPoids">—</b></div>
-        <div class="kpi"><span class="muted">Taille moyenne (cm)</span> <b id="kpiTaille">—</b></div>
-        <div class="kpi"><span class="muted">Date moyenne de naissance</span> <b id="kpiDateMoy">—</b></div>
+        <div class="kpi"><span class="muted">Participants</span><b id="kpiCount">0</b></div>
+        <div class="kpi"><span class="muted">Poids moyen (kg)</span><b id="kpiPoids">—</b></div>
+        <div class="kpi"><span class="muted">Taille moyenne (cm)</span><b id="kpiTaille">—</b></div>
+        <div class="kpi"><span class="muted">Date moyenne</span><b id="kpiDateMoy">—</b></div>
       </div>
 
-      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div class="card">
-          <div class="hd">Paris Fille / Garçon)</div>
+          <div class="hd">Répartition Fille / Garçon</div>
           <div class="bd chartBox"><canvas id="chartSexe"></canvas></div>
         </div>
         <div class="card">
           <div class="hd">Prénoms proposés</div>
-          <div class="bd">
-            <div class="flex2">
-              <div>
-                <div class="section-title">Prénoms de fille</div>
-                <div class="chips" id="chipsFille"></div>
-              </div>
-              <div>
-                <div class="section-title">Prénoms de garçon</div>
-                <div class="chips" id="chipsGarcon"></div>
-              </div>
+          <div class="bd" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <div class="muted" style="margin-bottom:6px">Fille</div>
+              <div class="chips" id="chipsFille"></div>
+            </div>
+            <div>
+              <div class="muted" style="margin-bottom:6px">Garçon</div>
+              <div class="chips" id="chipsGarcon"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="toolbar">
-        <input id="search" placeholder="Rechercher…" />
-        <select id="sortBy">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <input id="search" placeholder="Rechercher…" oninput="onSearch()" />
+        <select id="sortBy" onchange="onSort()">
           <option value="">Tri (aucun)</option>
           <option value="Date">Date</option>
           <option value="Poids (kg)">Poids (kg)</option>
@@ -191,17 +191,17 @@
           <option value="Sexe">Sexe</option>
           <option value="Prénom">Prénom</option>
         </select>
-        <button id="btnAddRow">Ajouter</button>
-        <button id="btnDeleteSel" class="danger">Supprimer sélection</button>
+        <button id="btnAddRow" onclick="addRow()">Ajouter</button>
+        <button id="btnDeleteSel" class="danger" onclick="deleteSelected()">Supprimer sélection</button>
       </div>
 
-      <div class="card" style="border:none">
+      <div class="card" style="border:none;box-shadow:none">
         <div class="bd" style="padding:0">
-          <div style="max-height:420px; overflow:auto; border-top-left-radius:12px; border-top-right-radius:12px">
+          <div style="max-height:420px;overflow:auto;border-top-left-radius:12px;border-top-right-radius:12px">
             <table id="tbl">
               <thead>
                 <tr>
-                  <th style="width:28px"><input type="checkbox" id="chkAll"></th>
+                  <th style="width:28px"><input type="checkbox" id="chkAll" onchange="toggleAll(this)"></th>
                   <th>Joueur</th>
                   <th>Sexe</th>
                   <th>Prénom</th>
@@ -220,416 +220,360 @@
   </section>
 </div>
 
-<!-- Toast container -->
 <div id="toastContainer"></div>
 
-<!-- Lock modal -->
 <div id="lockMask">
   <div id="lockCard">
     <h3>Déverrouiller la saisie</h3>
     <span class="muted">Entre le code pour permettre l’ajout / édition / suppression.</span>
     <input id="lockInput" placeholder="Code" maxlength="8" />
-    <div class="btns" style="margin-top:10px">
-      <button class="primary" id="btnLockOk">Déverrouiller</button>
-      <button class="ghost" id="btnLockCancel">Annuler</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="primary" onclick="lockOk()">Déverrouiller</button>
+      <button class="ghost" onclick="lockCancel()">Annuler</button>
     </div>
-    <div class="note" id="lockMsg"></div>
+    <div class="muted" id="lockMsg" style="margin-top:6px"></div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-(function(){
-  const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec";
-  const PASSCODE = "2983";
-  const COLS = ["Joueur","Sexe","Prénom","Taille (cm)","Poids (kg)","Date"];
-  let rows = []; let filtered = []; let editIndex = null;
-  let chartSexe = null;
-  let unlocked = false;
+/* ===== Config ===== */
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec";
+const PASSCODE = "2983";
+const COLS = ["Joueur","Sexe","Prénom","Taille (cm)","Poids (kg)","Date"];
 
-  const el = (s) => document.querySelector(s);
-  const fmt = {
-    kg: v => (isFinite(v)? (Math.round(v*1000)/1000).toFixed(3) : ""),
-    cm: v => (isFinite(v)? Math.round(v) : ""),
-    date: v => {
-      if(!v) return "";
-      const d = new Date(v);
-      if(isNaN(d)) return String(v);
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const yyyy = d.getFullYear();
-      return dd + "/" + mm + "/" + yyyy;
-    },
-  };
-  const isBlank = (v) => v==null || (typeof v==="string" && v.trim()=="");
+/* ===== State ===== */
+let rows = []; let filtered = []; let editIndex = null;
+let unlocked = false; let chartSexe = null;
 
-  // Toasts
-  function showToast(msg, ok=true, small=""){
-    const cont = el("#toastContainer");
-    const t = document.createElement("div");
-    t.className = "toast" + (ok ? "" : " err");
-    t.textContent = msg;
-    if (small){
-      const span = document.createElement("span");
-      span.className = "small";
-      span.textContent = small;
-      t.appendChild(span);
-    }
-    cont.appendChild(t);
-    setTimeout(()=>{ t.remove(); }, 3000);
-  }
+/* ===== Helpers ===== */
+const $ = s => document.querySelector(s);
+const byId = id => document.getElementById(id);
 
-  function normalizeSexe(s){
-    if(!s) return "";
-    const x = String(s).trim().toLowerCase();
-    if(x.startsWith("f")) return "Fille";
-    if(x.startsWith("g")) return "Garçon";
-    return s;
+function showToast(msg, ok=true, small=""){
+  const cont = byId("toastContainer");
+  const t = document.createElement("div");
+  t.className = "toast" + (ok ? "" : " err");
+  t.textContent = msg;
+  if (small){
+    const span = document.createElement("span");
+    span.style.display = "block";
+    span.style.fontSize = "12px";
+    span.style.opacity = ".8";
+    span.textContent = small;
+    t.appendChild(span);
   }
-  function parseNumber(n){
-    if(n===null || n===undefined || n==="") return null;
-    const v = String(n).replace(",", ".").replace(/[^0-9.\-]/g,"");
-    const f = parseFloat(v);
-    return isFinite(f) ? f : null;
-  }
-  function isHeaderRow(obj){
-    const keys = COLS.filter(k => Object.prototype.hasOwnProperty.call(obj,k));
-    if(keys.length < 2) return false;
-    let matches = 0;
-    for(const k of COLS){
-      const v = obj[k];
-      if(typeof v === "string" && v.trim().toLowerCase() === k.toLowerCase()) matches++;
-    }
-    return matches >= 2;
-  }
-  function isSummaryRow(obj){
-    const tokens = ["POIDS MOYEN","DATE MOYENNE","TAILLE MOYENNE","SEXE MAJORITAIRE"];
-    const hasToken = Object.values(obj).some(val => typeof val === "string" && tokens.some(t => val.toUpperCase().includes(t)));
-    const nonEmptyMain = COLS.reduce((acc,k)=> acc + (!isBlank(obj[k])?1:0), 0);
-    return hasToken && nonEmptyMain <= 1;
-  }
-  function isEmptyCore(obj){
-    return COLS.every(k => {
-      const v = obj[k];
-      if(v==null) return true;
-      if(typeof v === "number") return !isFinite(v);
-      if(typeof v === "string") return v.trim()==="";
-      return false;
-    });
-  }
-  function parseDateAny(d){
-    if(d==null || d==="") return "";
-    if(typeof d==="number"){ const excelEpoch = new Date(Date.UTC(1899,11,30)); return new Date(excelEpoch.getTime() + d * 86400000).toISOString(); }
-    const try1 = new Date(d);
-    if(!isNaN(try1)) return try1.toISOString();
-    const m = String(d).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-    if(m){ const [_,dd,mm,yyyy]=m; return new Date(Number(yyyy), Number(mm)-1, Number(dd)).toISOString(); }
-    return "";
-  }
+  cont.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+function setCloudStatus(msg, err=false){
+  const s = byId('cloudStatus');
+  s.textContent = msg;
+  s.style.color = err ? '#b03a48' : '#7b5f6a';
+}
+function normalizeSexe(s){
+  if(!s) return "";
+  const x = String(s).trim().toLowerCase();
+  if(x.startsWith("f")) return "Fille";
+  if(x.startsWith("g")) return "Garçon";
+  return s;
+}
+function parseNumber(n){
+  if(n===null || n===undefined || n==="") return null;
+  const v = String(n).replace(",", ".").replace(/[^0-9.\-]/g,"");
+  const f = parseFloat(v);
+  return isFinite(f) ? f : null;
+}
+function parseDateAny(d){
+  if(d==null || d==="") return "";
+  if(typeof d==="number"){ const epoch = new Date(Date.UTC(1899,11,30)); return new Date(epoch.getTime() + d * 86400000).toISOString(); }
+  const t = new Date(d);
+  if(!isNaN(t)) return t.toISOString();
+  const m = String(d).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){ const [_,dd,mm,yy] = m; return new Date(+yy, +mm-1, +dd).toISOString(); }
+  return "";
+}
+function splitPrenoms(val){
+  if(!val) return [];
+  return String(val).split(/[;,/|]/).map(s=>s.trim()).filter(Boolean);
+}
+const fmt = {
+  kg: v => (isFinite(v)? (Math.round(v*1000)/1000).toFixed(3) : ""),
+  cm: v => (isFinite(v)? Math.round(v) : ""),
+  date: v => {
+    if(!v) return "";
+    const d=new Date(v); if(isNaN(d)) return String(v);
+    const pad=n=>String(n).padStart(2,"0");
+    return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+  },
+};
+function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
-  function cleanAndNormalize(arr){
-    return arr
-      .filter(obj => obj && typeof obj==="object")
-      .filter(obj => !isHeaderRow(obj) && !isSummaryRow(obj) && !isEmptyCore(obj))
-      .map(obj => ({ 
-        "Joueur": (obj["Joueur"]??"").toString().trim(),
-        "Sexe": normalizeSexe(obj["Sexe"]),
-        "Prénom": (obj["Prénom"]??"").toString().trim(),
-        "Taille (cm)": parseNumber(obj["Taille (cm)"]),
-        "Poids (kg)": parseNumber(obj["Poids (kg)"]),
-        "Date": parseDateAny(obj["Date"]),
-      }));
-  }
+/* ===== Core ===== */
+function cleanAndNormalize(arr){
+  const aliasPrenom = ["Prénom","Prenom","Prénoms","Prenoms","Prénom proposé","Prenom propose","Prénom pressenti","Prenom pressenti","prenom","prénom"];
+  return arr
+    .filter(o=>o && typeof o==="object")
+    .map(o=>({
+      "Joueur": (o["Joueur"]||o["joueur"]||"").toString().trim(),
+      "Sexe": normalizeSexe(o["Sexe"]||o["sexe"]),
+      "Prénom": (()=>{ for(const k of aliasPrenom){ if(o[k]) return o[k]; } return (o["Prénom"]||""); })().toString().trim(),
+      "Taille (cm)": parseNumber(o["Taille (cm)"]||o["Taille"]),
+      "Poids (kg)": parseNumber(o["Poids (kg)"]||o["Poids"]),
+      "Date": parseDateAny(o["Date"]||o["date"]),
+    }))
+    .filter(o=> !COLS.every(k=> (o[k]==null || (typeof o[k]==="string" && o[k].trim()==="")) ));
+}
 
-  function renderTable(){
-    const tb = el("#tbl tbody");
-    tb.innerHTML = "";
-    filtered.forEach((r, i) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><input type="checkbox" data-idx="${i}" ${!unlocked?'disabled':''}></td>
-        <td>${escapeHtml(r["Joueur"])}</td>
-        <td>${escapeHtml(r["Sexe"]||"")}</td>
-        <td>${escapeHtml(r["Prénom"]||"")}</td>
-        <td>${fmt.cm(r["Taille (cm)"])}</td>
-        <td>${fmt.kg(r["Poids (kg)"])}</td>
-        <td>${fmt.date(r["Date"])}</td>
-      `;
-      if(unlocked) tr.ondblclick = () => startEdit(findGlobalIndex(i));
-      tb.appendChild(tr);
-    });
-    el("#kpiCount").textContent = String(rows.length);
-  }
-  function escapeHtml(s){
-    return String(s??"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;","&gt;":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-  }
-  function filterAndSort(){
-    const q = el("#search").value.trim().toLowerCase();
-    const sortKey = el("#sortBy").value;
-    filtered = rows.filter(r => {
-      if(!q) return true;
-      return COLS.some(k => (r[k]??"").toString().toLowerCase().includes(q));
-    });
-    if(sortKey){
-      filtered.sort((a,b)=>{
-        const va = a[sortKey], vb = b[sortKey];
-        if(sortKey==="Date"){
-          return (a["Date"]||"").localeCompare(b["Date"]||"");
-        } else {
-          if(typeof va==="number" && typeof vb==="number") return va - vb;
-          return (va??"").toString().localeCompare((vb??"").toString(), "fr");
-        }
-      });
-    }
-  }
-
-  function startEdit(globalIdx){
-    if(!unlocked) return;
-    if(globalIdx==null) return;
-    editIndex = globalIdx;
-    const r = rows[globalIdx];
-    el("#fJoueur").value = r["Joueur"] || "";
-    el("#fSexe").value = r["Sexe"] || "";
-    el("#fPrenom").value = r["Prénom"] || "";
-    el("#fTaille").value = r["Taille (cm)"] ?? "";
-    el("#fPoidsKg").value = r["Poids (kg)"] ?? "";
-    el("#fDate").value = r["Date"] ? toInputDate(new Date(r["Date"])) : "";
-    el("#editFlag").style.display = "inline-block";
-    el("#fJoueur").focus();
-  }
-  function cancelEdit(){
-    editIndex = null;
-    el("#form").reset();
-    el("#editFlag").style.display = "none";
-  }
-  function toInputDate(d){
-    const pad = n => String(n).padStart(2,"0");
-    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
-  }
-
-  function submitForm(e){
-    e.preventDefault();
-    if(!unlocked) return;
-    const dateStr = el("#fDate").value;
-    const iso = dateStr ? new Date(dateStr+"T12:00:00").toISOString() : "";
-    const obj = {
-      "Joueur": el("#fJoueur").value.trim(),
-      "Sexe": normalizeSexe(el("#fSexe").value),
-      "Prénom": el("#fPrenom").value.trim(),
-      "Taille (cm)": parseNumber(el("#fTaille").value),
-      "Poids (kg)": parseNumber(el("#fPoidsKg").value),
-      "Date": iso
-    };
-    if(editIndex!=null){ rows[editIndex] = obj; } else { rows.push(obj); }
-    cancelEdit(); refresh();
-  }
-
-  function deleteSelected(){
-    if(!unlocked) return;
-    const checks = Array.from(document.querySelectorAll('#tbl tbody input[type="checkbox"]'));
-    const toDeleteGlobal = checks.filter(c=>c.checked).map(c=> findGlobalIndex(parseInt(c.dataset.idx,10))).filter(i=>i!=null);
-    if(!toDeleteGlobal.length) return;
-    rows = rows.filter((_,i)=> !toDeleteGlobal.includes(i));
-    refresh();
-  }
-  function findGlobalIndex(filteredIdx){
-    const target = filtered[filteredIdx];
-    if(!target) return null;
-    return rows.indexOf(target);
-  }
-
-  function buildChartSexe(){
-    const counts = {Fille:0, "Garçon":0}; // on ignore Autre pour l'histogramme
-    rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; });
-    const ctx = document.getElementById("chartSexe");
-    if(chartSexe) chartSexe.destroy();
-    chartSexe = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: ["Fille","Garçon"],
-        datasets: [{ data: [counts.Fille, counts["Garçon"]] }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display:false } },
-        scales: {
-          x: { grid: { display:false } },
-          y: { beginAtZero:true, ticks: { precision:0 } }
-        }
-      }
-    });
-  }
-
-  function computeStats(){
-    const nums = (key)=> rows.map(r=>r[key]).filter(v=>typeof v==="number" && isFinite(v));
-    const poids = nums("Poids (kg)"); const taille = nums("Taille (cm)");
-    const avg = arr => arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-    el("#kpiPoids").textContent = avg(poids)!=null ? fmt.kg(avg(poids)) : "—";
-    el("#kpiTaille").textContent = avg(taille)!=null ? fmt.cm(avg(taille)) : "—";
-
-    // Date moyenne
-    const dates = rows.map(r=> r["Date"] ? new Date(r["Date"]).getTime() : null).filter(v=> v!=null && isFinite(v));
-    if(dates.length){
-      const meanTs = Math.round(dates.reduce((a,b)=>a+b,0) / dates.length);
-      const d = new Date(meanTs);
-      el("#kpiDateMoy").textContent = fmt.date(d);
-    } else {
-      el("#kpiDateMoy").textContent = "—";
-    }
-
-    // Prénoms par sexe
-    const mapF = new Map(), mapG = new Map();
-    rows.forEach(r=>{
-      const s = normalizeSexe(r["Sexe"]);
-      const p = (r["Prénom"]||"").trim();
-      if(!p) return;
-      if(s==="Fille") mapF.set(p, (mapF.get(p)||0)+1);
-      else if(s==="Garçon") mapG.set(p, (mapG.get(p)||0)+1);
-    });
-    renderChips("#chipsFille", mapF);
-    renderChips("#chipsGarcon", mapG);
-  }
-
-  function renderChips(selector, m){
-    const box = el(selector);
-    box.innerHTML = "";
-    if(m.size===0){
-      box.innerHTML = '<span class="muted">—</span>';
-      return;
-    }
-    const arr = Array.from(m.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0], "fr"));
-    arr.forEach(([name, count])=>{
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.textContent = name + (count>1? ` ×${count}` : "");
-      box.appendChild(chip);
-    });
-  }
-
-  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildChartSexe(); el("#chkAll").checked = false; setLockedUI(); }
-
-  // Cloud sync (GET/POST)
-  el("#btnCloudLoad").addEventListener("click", loadFromCloud);
-  el("#btnCloudSave").addEventListener("click", saveToCloud);
-
-  async function loadFromCloud(){
-    const btn = el("#btnCloudLoad");
-    btn.disabled = true; setCloudStatus("Chargement…");
-    try {
-      const res = await fetch(CLOUD_URL, { method:"GET", cache:"no-store" });
-      if(!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      if(!data.rows) throw new Error("Réponse invalide");
-      rows = cleanAndNormalize(data.rows);
-      refresh();
-      setCloudStatus(`Chargé (${rows.length} lignes).`);
-      showToast("Chargement réussi ✅", true, `Lignes: ${rows.length}`);
-    } catch(e){
-      console.error(e); setCloudStatus("Erreur de chargement : " + e.message, true);
-      showToast("Échec du chargement ❌", false, e.message);
-    } finally {
-      btn.disabled = false;
-    }
-  }
-  async function saveToCloud(){
-    if(!unlocked) return;
-    const btn = el("#btnCloudSave");
-    btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = "Enregistrement…"; setCloudStatus("Enregistrement…");
-    try {
-      const payload = {
-        rows: rows.map(r => ({ 
-          "Joueur": r["Joueur"]||"",
-          "Sexe": r["Sexe"]||"",
-          "Prénom": r["Prénom"]||"",
-          "Taille (cm)": r["Taille (cm)"]??"",
-          "Poids (kg)": r["Poids (kg)"]??"",
-          "Date": r["Date"] ? fmt.date(r["Date"]) : ""
-        }))
-      };
-      const res = await fetch(CLOUD_URL, {
-        method:"POST",
-        headers: { "Content-Type":"text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      if(!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json().catch(()=>({ok:true}));
-      if(!data.ok && data.ok !== undefined) throw new Error("Réponse invalide");
-      setCloudStatus("Enregistré ✅");
-      showToast("Enregistrement réussi ✅");
-    } catch(e){
-      console.error(e); setCloudStatus("Erreur d'enregistrement : " + (e.message||e), true);
-      showToast("Échec de l'enregistrement ❌", false, e.message||String(e));
-    } finally {
-      btn.textContent = oldTxt; btn.disabled = false;
-    }
-  }
-  function setCloudStatus(msg, isErr=false){
-    const elS = el("#cloudStatus");
-    elS.textContent = msg;
-    elS.style.color = isErr ? "#ffb4b4" : "#cbd5e1";
-  }
-
-  // Table actions
-  el("#chkAll").addEventListener("change", (e)=>{ document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = e.target.checked); });
-  el("#btnDeleteSel").addEventListener("click", deleteSelected);
-  el("#btnAddRow").addEventListener("click", ()=>{ if(!unlocked) return; cancelEdit(); el("#fJoueur").focus(); });
-
-  // Recherche / Tri
-  el("#search").addEventListener("input", ()=>{ filterAndSort(); renderTable(); });
-  el("#sortBy").addEventListener("change", ()=>{ filterAndSort(); renderTable(); });
-
-  // Form submit
-  el("#form").addEventListener("submit", submitForm);
-  el("#btnCancel").addEventListener("click", cancelEdit);
-
-  // Toggle panel visibility
-  const wrap = el("#wrap");
-  const btnToggle = el("#btnTogglePanel");
-  const btnShow = el("#btnShowPanel");
-  btnToggle.addEventListener("click", ()=>{ wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; });
-  btnShow.addEventListener("click", ()=>{ wrap.classList.remove("collapsed"); btnShow.style.display="none"; });
-
-  // Lock modal
-  const mask = el("#lockMask");
-  function openLock(){
-    el("#lockMsg").textContent = "";
-    el("#lockInput").value = "";
-    mask.style.display = "flex";
-    setTimeout(()=> el("#lockInput").focus(), 50);
-  }
-  function closeLock(){
-    mask.style.display = "none";
-  }
-  function setLockedUI(){
-    const disable = (sel, d) => document.querySelectorAll(sel).forEach(x=> x.disabled = d);
-    disable("#btnCloudSave", !unlocked);
-    disable("#btnDeleteSel", !unlocked);
-    disable("#btnAddRow", !unlocked);
-    document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
-  }
-  el("#btnUnlock").addEventListener("click", openLock);
-  el("#btnLockCancel").addEventListener("click", closeLock);
-  el("#btnLockOk").addEventListener("click", ()=>{
-    const v = el("#lockInput").value.trim();
-    if(v === PASSCODE){
-      unlocked = true;
-      closeLock();
-      showToast("Saisie déverrouillée 🔓");
-      setLockedUI();
-    } else {
-      el("#lockMsg").textContent = "Code incorrect.";
-    }
+function filterAndSort(){
+  const q = byId("search").value.trim().toLowerCase();
+  const sortKey = byId("sortBy").value;
+  filtered = rows.filter(r => {
+    if(!q) return true;
+    return COLS.some(k => (r[k]??"").toString().toLowerCase().includes(q));
   });
+  if(sortKey){
+    filtered.sort((a,b)=>{
+      if(sortKey==="Date") return (a.Date||"").localeCompare(b.Date||"");
+      const va=a[sortKey], vb=b[sortKey];
+      if(typeof va==="number" && typeof vb==="number") return va - vb;
+      return (va??"").toString().localeCompare((vb??"").toString(),"fr");
+    });
+  }
+}
 
-  // Init
-  (async function init(){
-    await loadFromCloud();
-    setLockedUI();
-    // on démarre en collapsed : garder le bouton "Afficher le panneau" visible
-    btnShow.style.display = "inline-block";
-  })();
+function renderTable(){
+  const tb = byId("tbl").querySelector("tbody");
+  tb.innerHTML = "";
+  filtered.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="checkbox" data-idx="${i}" ${!unlocked?'disabled':''}></td>
+      <td>${escapeHtml(r["Joueur"])}</td>
+      <td>${escapeHtml(r["Sexe"]||"")}</td>
+      <td>${escapeHtml(r["Prénom"]||"")}</td>
+      <td>${fmt.cm(r["Taille (cm)"])}</td>
+      <td>${fmt.kg(r["Poids (kg)"])}</td>
+      <td>${fmt.date(r["Date"])}</td>`;
+    if(unlocked) tr.ondblclick=()=>startEdit(findGlobalIndex(i));
+    tb.appendChild(tr);
+  });
+  byId("kpiCount").textContent = String(rows.length);
+}
+
+function renderNamesBySexe(){
+  const mapF = new Map(), mapG = new Map();
+  rows.forEach(r=>{
+    const s = normalizeSexe(r["Sexe"]);
+    const list = splitPrenoms(r["Prénom"]);
+    const seen = new Set();
+    list.forEach(p=>{
+      const key = p.charAt(0).toUpperCase()+p.slice(1);
+      if(seen.has(key)) return; seen.add(key);
+      if(s==="Fille") mapF.set(key, (mapF.get(key)||0)+1);
+      else if(s==="Garçon") mapG.set(key, (mapG.get(key)||0)+1);
+    });
+  });
+  const renderChips=(sel,map)=>{
+    const box=$(sel); box.innerHTML="";
+    if(map.size===0){ box.innerHTML='<span class="muted">—</span>'; return; }
+    Array.from(map.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0],"fr")).forEach(([name,count])=>{
+      const c=document.createElement("span"); c.className="chip"; c.textContent=name+(count>1?` ×${count}`:""); box.appendChild(c);
+    });
+  };
+  renderChips("#chipsFille", mapF); renderChips("#chipsGarcon", mapG);
+}
+
+function computeStats(){
+  const nums=k=> rows.map(r=>r[k]).filter(v=>typeof v==="number"&&isFinite(v));
+  const avg=a=> a.length? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const p=avg(nums("Poids (kg)")), t=avg(nums("Taille (cm)"));
+  byId("kpiPoids").textContent = p!=null? fmt.kg(p) : "—";
+  byId("kpiTaille").textContent = t!=null? fmt.cm(t) : "—";
+  const dates=rows.map(r=>r.Date? new Date(r.Date).getTime():null).filter(v=>v!=null&&isFinite(v));
+  byId("kpiDateMoy").textContent = dates.length? fmt.date(new Date(Math.round(dates.reduce((a,b)=>a+b,0)/dates.length))) : "—";
+  renderNamesBySexe();
+}
+
+function buildChartSexe(){
+  const counts={Fille:0,"Garçon":0};
+  rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; });
+  const ctx=document.getElementById("chartSexe"); if(!ctx) return;
+  if(chartSexe) chartSexe.destroy();
+  chartSexe = new Chart(ctx,{ type:"bar",
+    data:{ labels:["Fille","Garçon"], datasets:[{ data:[counts.Fille, counts["Garçon"]] }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{precision:0}}} }
+  });
+}
+
+function refresh(){
+  filterAndSort(); renderTable(); computeStats(); buildChartSexe();
+  const all = byId("chkAll"); if(all) all.checked=false;
+  setLockedUI();
+}
+
+/* ===== Cloud sync (robuste) ===== */
+async function loadFromCloud(){
+  const ts = Date.now();
+  const url = CLOUD_URL + "?ts=" + ts;
+  setCloudStatus("Chargement…");
+  try{
+    const res = await fetch(url, { method:"GET", cache:"no-store" });
+    const rawText = await res.text();
+    let js;
+    try { js = JSON.parse(rawText); } catch(_){ js = rawText; }
+    let arr = [];
+    if(Array.isArray(js?.rows)) arr = js.rows;
+    else if (Array.isArray(js?.data)) arr = js.data;
+    else if (Array.isArray(js?.values)) {
+      const vals = js.values;
+      const headers = (vals[0]||[]).map(h=>String(h).trim());
+      for(let i=1;i<vals.length;i++){
+        const obj={};
+        (vals[i]||[]).forEach((v,idx)=> obj[headers[idx]||("Col"+idx)] = v );
+        arr.push(obj);
+      }
+    } else if (Array.isArray(js)) {
+      arr = js;
+    } else {
+      throw new Error("Réponse inattendue. Extrait: " + String(rawText).slice(0,120));
+    }
+    rows = cleanAndNormalize(arr);
+    refresh();
+    setCloudStatus(`Chargé (${rows.length} lignes).`);
+    showToast("Chargement réussi ✅", true, `Lignes: ${rows.length}`);
+  } catch(e){
+    console.error(e);
+    setCloudStatus("Erreur de chargement : " + (e.message||e), true);
+    showToast("Échec du chargement ❌", false, e.message||String(e));
+  }
+}
+
+async function saveToCloud(){
+  if(!unlocked) return;
+  const btn = byId("btnCloudSave");
+  btn.disabled=true; const old=btn.textContent; btn.textContent="Enregistrement…";
+  setCloudStatus("Enregistrement…");
+  try{
+    const payload = {
+      rows: rows.map(r => ({
+        "Joueur": r["Joueur"]||"",
+        "Sexe": r["Sexe"]||"",
+        "Prénom": r["Prénom"]||"",
+        "Taille (cm)": r["Taille (cm)"]??"",
+        "Poids (kg)": r["Poids (kg)"]??"",
+        "Date": r["Date"] ? fmt.date(r["Date"]) : ""
+      }))
+    };
+    const res = await fetch(CLOUD_URL, {
+      method:"POST",
+      headers: { "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const txt = await res.text();
+    if(!res.ok) throw new Error("HTTP "+res.status+" — "+txt.slice(0,120));
+    setCloudStatus("Enregistré ✅"); showToast("Enregistrement réussi ✅");
+  } catch(e){
+    console.error(e);
+    setCloudStatus("Erreur d'enregistrement : " + (e.message||e), true);
+    showToast("Échec de l'enregistrement ❌", false, e.message||String(e));
+  } finally {
+    btn.textContent=old; btn.disabled=false;
+  }
+}
+
+/* ===== Table & edit ===== */
+function toggleAll(master){
+  document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = master.checked);
+}
+function deleteSelected(){
+  if(!unlocked) return;
+  const checks=[...document.querySelectorAll('#tbl tbody input[type="checkbox"]')];
+  const idxs = checks.filter(c=>c.checked).map(c=> parseInt(c.dataset.idx||"-1",10)).filter(i=>i>=0);
+  rows = rows.filter((_,i)=> !idxs.includes(i));
+  refresh();
+}
+function addRow(){ if(!unlocked) return; editIndex=null; byId("form").reset(); byId("fJoueur").focus(); }
+function startEdit(i){
+  if(!unlocked || i==null) return;
+  editIndex=i;
+  const r=rows[i];
+  byId("fJoueur").value=r["Joueur"]||"";
+  byId("fSexe").value=r["Sexe"]||"";
+  byId("fPrenom").value=r["Prénom"]||"";
+  byId("fTaille").value=r["Taille (cm)"]??"";
+  byId("fPoidsKg").value=r["Poids (kg)"]??"";
+  byId("fDate").value=r["Date"]? toYMD(new Date(r["Date"])):"";
+  byId("editFlag").style.display="inline-block"; byId("fJoueur").focus();
+}
+function cancelEdit(){ editIndex=null; byId("form").reset(); byId("editFlag").style.display="none"; }
+function submitForm(e){
+  e.preventDefault();
+  if(!unlocked) return false;
+  const iso = byId("fDate").value? new Date(byId("fDate").value+"T12:00:00").toISOString() : "";
+  const obj={
+    "Joueur": byId("fJoueur").value.trim(),
+    "Sexe": normalizeSexe(byId("fSexe").value),
+    "Prénom": byId("fPrenom").value.trim(),
+    "Taille (cm)": parseNumber(byId("fTaille").value),
+    "Poids (kg)": parseNumber(byId("fPoidsKg").value),
+    "Date": iso
+  };
+  if(editIndex!=null) rows[editIndex]=obj; else rows.push(obj);
+  cancelEdit(); refresh();
+  return false;
+}
+const toYMD = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function findGlobalIndex(filteredIdx){
+  const target = filtered[filteredIdx]; if(!target) return null;
+  return rows.indexOf(target);
+}
+
+/* ===== Volet ===== */
+function togglePanel(){
+  const wrap = byId("wrap"); const btnShow = byId("btnShowPanel");
+  if(!wrap || !btnShow) return;
+  wrap.classList.add("collapsed"); btnShow.style.display="inline-block";
+}
+function showPanel(){
+  const wrap = byId("wrap"); const btnShow = byId("btnShowPanel");
+  if(!wrap || !btnShow) return;
+  wrap.classList.remove("collapsed"); btnShow.style.display="none";
+}
+
+/* ===== Lock modal ===== */
+function openLock(){
+  byId("lockMsg").textContent="";
+  byId("lockInput").value="";
+  byId("lockMask").style.display="flex";
+  setTimeout(()=> byId("lockInput").focus(), 50);
+}
+function lockCancel(){ byId("lockMask").style.display="none"; }
+function lockOk(){
+  const v = byId("lockInput").value.trim();
+  if(v === PASSCODE){
+    unlocked = true; byId("lockMask").style.display="none";
+    showToast("Saisie déverrouillée 🔓"); setLockedUI();
+  } else {
+    byId("lockMsg").textContent = "Code incorrect.";
+  }
+}
+function setLockedUI(){
+  const disable = (sel, d) => document.querySelectorAll(sel).forEach(x=> x.disabled = d);
+  disable("#btnCloudSave", !unlocked);
+  disable("#btnDeleteSel", !unlocked);
+  disable("#btnAddRow", !unlocked);
+  document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
+}
+
+/* ===== Search/Sort bindings ===== */
+function onSearch(){ filterAndSort(); renderTable(); }
+function onSort(){ filterAndSort(); renderTable(); }
+
+/* ===== Init ===== */
+(async function init(){
+  try { await loadFromCloud(); } catch(e){ /* toasts gèrent */ }
+  finally { setLockedUI(); byId("btnShowPanel").style.display="inline-block"; }
 })();
 </script>
 </body>
