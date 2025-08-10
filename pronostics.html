@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pronostics Bébé</title>
+  <title>Dashboard Pronostics Bébé — v5.4 (Cloud + Verrou)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
@@ -28,7 +27,7 @@
     button{cursor:pointer; background:linear-gradient(180deg,#233146,#172232); border-color:#2f3a4d}
     button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
     button.ghost{background:transparent; border-color:#30384a}
-    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
+    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c3c); border-color:#963c3c}
     button[disabled]{opacity:.6; cursor:not-allowed}
     .btns{display:flex; gap:8px; flex-wrap:wrap}
     .grid{display:grid; gap:12px}
@@ -57,22 +56,29 @@
     .toast{min-width:240px; max-width:360px; padding:12px 14px; border-radius:10px; color:#0b111a; background:#d1fae5; border:1px solid #10b981; box-shadow:0 8px 26px rgba(0,0,0,.35); font-size:14px}
     .toast.err{ background:#fee2e2; border-color:#ef4444; }
     .toast .small{ display:block; font-size:12px; color:#111827; opacity:.7; margin-top:4px }
-    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } .wrap #panelLeft{ order:2 } }
+
+    /* Modal lock */
+    #lockMask{ position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter: blur(4px); display:none; align-items:center; justify-content:center; z-index:9998 }
+    #lockCard{ background:#111620; border:1px solid #232a36; border-radius:12px; padding:18px; width:clamp(280px, 40vw, 420px) }
+    #lockCard h3{ margin:0 0 6px }
+    #lockCard .muted{ display:block; margin-bottom:10px }
+    #lockCard input{ text-align:center; letter-spacing:4px; font-weight:700; font-size:18px }
   </style>
 </head>
 <body>
 <header>
-  <h1>Pronostics Bébé</h1>
-  <div class="sub">Données synchronisées avec Google Sheets.</div>
+  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.4 Cloud</span></h1>
+  <div class="sub">Données synchronisées avec Google Sheets. Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
 </header>
 
-<div class="wrap" id="wrap">
-  <!-- Colonne gauche : Cloud + Form -->
+<div class="wrap collapsed" id="wrap">
+  <!-- Colonne gauche : Cloud + Form (protégés) -->
   <section class="card" id="panelLeft">
     <div class="hd">
       <span>Données (Google Sheets)</span>
       <div class="toggle-wrap">
         <button class="ghost" id="btnTogglePanel" title="Masquer/Afficher ce panneau">Masquer le panneau</button>
+        <button class="primary" id="btnUnlock">Déverrouiller la saisie</button>
       </div>
     </div>
     <div class="bd">
@@ -81,6 +87,8 @@
         <button id="btnCloudSave">Enregistrer vers Google Sheets</button>
         <span class="status" id="cloudStatus"></span>
       </div>
+
+      <div class="note">Mode sécurisé : par défaut, la saisie est verrouillée. Déverrouille avec le code pour modifier/ajouter/supprimer.</div>
 
       <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
 
@@ -122,6 +130,7 @@
           <button type="button" id="btnCancel" class="ghost">Annuler</button>
           <span class="pill" id="editFlag" style="display:none">Mode édition</span>
         </div>
+        <div class="note">Après avoir ajouté/édité, clique <b>Enregistrer vers Google Sheets</b> pour pousser les changements.</div>
       </form>
     </div>
   </section>
@@ -201,19 +210,33 @@
   </section>
 </div>
 
-<div class="footer">Cloud only — Google Apps Script & Google Sheets. Aucun stockage local automatique (sauf état en RAM pendant l’édition).</div>
-
 <!-- Toast container -->
 <div id="toastContainer"></div>
+
+<!-- Lock modal -->
+<div id="lockMask">
+  <div id="lockCard">
+    <h3>Déverrouiller la saisie</h3>
+    <span class="muted">Entre le code pour permettre l’ajout / édition / suppression.</span>
+    <input id="lockInput" placeholder="Code" maxlength="8" />
+    <div class="btns" style="margin-top:10px">
+      <button class="primary" id="btnLockOk">Déverrouiller</button>
+      <button class="ghost" id="btnLockCancel">Annuler</button>
+    </div>
+    <div class="note" id="lockMsg"></div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 (function(){
   const CLOUD_URL = "https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec";
+  const PASSCODE = "2983";
   const COLS = ["Joueur","Sexe","Prénom","Taille (cm)","Poids (kg)","Date"];
   let rows = []; let filtered = []; let editIndex = null;
   let charts = {sexe:null};
+  let unlocked = false;
 
   const el = (s) => document.querySelector(s);
   const fmt = {
@@ -229,7 +252,7 @@
       return dd + "/" + mm + "/" + yyyy;
     },
   };
-  const isBlank = (v) => v==null || (typeof v==="string" && v.trim()==="");
+  const isBlank = (v) => v==null || (typeof v==="string" && v.trim()=="");
 
   // Toasts
   function showToast(msg, ok=true, small=""){
@@ -315,7 +338,7 @@
     filtered.forEach((r, i) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="checkbox" data-idx="${i}"></td>
+        <td><input type="checkbox" data-idx="${i}" ${!unlocked?'disabled':''}></td>
         <td>${escapeHtml(r["Joueur"])}</td>
         <td>${escapeHtml(r["Sexe"]||"")}</td>
         <td>${escapeHtml(r["Prénom"]||"")}</td>
@@ -323,7 +346,7 @@
         <td>${fmt.kg(r["Poids (kg)"])}</td>
         <td>${fmt.date(r["Date"])}</td>
       `;
-      tr.ondblclick = () => startEdit(findGlobalIndex(i));
+      if(unlocked) tr.ondblclick = () => startEdit(findGlobalIndex(i));
       tb.appendChild(tr);
     });
     el("#kpiCount").textContent = String(rows.length);
@@ -352,6 +375,7 @@
   }
 
   function startEdit(globalIdx){
+    if(!unlocked) return;
     if(globalIdx==null) return;
     editIndex = globalIdx;
     const r = rows[globalIdx];
@@ -376,6 +400,7 @@
 
   function submitForm(e){
     e.preventDefault();
+    if(!unlocked) return;
     const dateStr = el("#fDate").value;
     const iso = dateStr ? new Date(dateStr+"T12:00:00").toISOString() : "";
     const obj = {
@@ -391,6 +416,7 @@
   }
 
   function deleteSelected(){
+    if(!unlocked) return;
     const checks = Array.from(document.querySelectorAll('#tbl tbody input[type="checkbox"]'));
     const toDeleteGlobal = checks.filter(c=>c.checked).map(c=> findGlobalIndex(parseInt(c.dataset.idx,10))).filter(i=>i!=null);
     if(!toDeleteGlobal.length) return;
@@ -460,9 +486,9 @@
     });
   }
 
-  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; }
+  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; setLockedUI(); }
 
-  // Cloud sync
+  // Cloud sync (GET/POST)
   el("#btnCloudLoad").addEventListener("click", loadFromCloud);
   el("#btnCloudSave").addEventListener("click", saveToCloud);
 
@@ -486,10 +512,11 @@
     }
   }
   async function saveToCloud(){
+    if(!unlocked) return;
     const btn = el("#btnCloudSave");
     btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = "Enregistrement…"; setCloudStatus("Enregistrement…");
     try {
-      const payloadObj = {
+      const payload = {
         rows: rows.map(r => ({ 
           "Joueur": r["Joueur"]||"",
           "Sexe": r["Sexe"]||"",
@@ -499,16 +526,14 @@
           "Date": r["Date"] ? fmt.date(r["Date"]) : ""
         }))
       };
-      const body = new URLSearchParams({ payload: JSON.stringify(payloadObj) }).toString();
       const res = await fetch(CLOUD_URL, {
         method:"POST",
-        headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
-        body
+        headers: { "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
       });
       if(!res.ok) throw new Error("HTTP " + res.status);
-      let data = {ok:true};
-      try{ data = await res.json(); }catch{}
-      if(data.ok !== true) throw new Error("Réponse invalide");
+      const data = await res.json().catch(()=>({ok:true}));
+      if(!data.ok && data.ok !== undefined) throw new Error("Réponse invalide");
       setCloudStatus("Enregistré ✅");
       showToast("Enregistrement réussi ✅");
     } catch(e){
@@ -527,7 +552,7 @@
   // Table actions
   el("#chkAll").addEventListener("change", (e)=>{ document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = e.target.checked); });
   el("#btnDeleteSel").addEventListener("click", deleteSelected);
-  el("#btnAddRow").addEventListener("click", ()=>{ cancelEdit(); el("#fJoueur").focus(); });
+  el("#btnAddRow").addEventListener("click", ()=>{ if(!unlocked) return; cancelEdit(); el("#fJoueur").focus(); });
 
   // Recherche / Tri
   el("#search").addEventListener("input", ()=>{ filterAndSort(); renderTable(); });
@@ -544,8 +569,45 @@
   btnToggle.addEventListener("click", ()=>{ wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; });
   btnShow.addEventListener("click", ()=>{ wrap.classList.remove("collapsed"); btnShow.style.display="none"; });
 
-  // Init: auto-load from cloud
-  (async function init(){ await loadFromCloud(); })();
+  // Lock modal
+  const mask = el("#lockMask");
+  function openLock(){
+    el("#lockMsg").textContent = "";
+    el("#lockInput").value = "";
+    mask.style.display = "flex";
+    setTimeout(()=> el("#lockInput").focus(), 50);
+  }
+  function closeLock(){
+    mask.style.display = "none";
+  }
+  function setLockedUI(){
+    // disable all input controls when locked
+    const disable = (sel, d) => document.querySelectorAll(sel).forEach(x=> x.disabled = d);
+    disable("#btnCloudSave", !unlocked);
+    disable("#btnDeleteSel", !unlocked);
+    disable("#btnAddRow", !unlocked);
+    document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
+  }
+  el("#btnUnlock").addEventListener("click", openLock);
+  el("#btnLockCancel").addEventListener("click", closeLock);
+  el("#btnLockOk").addEventListener("click", ()=>{
+    const v = el("#lockInput").value.trim();
+    if(v === PASSCODE){
+      unlocked = true;
+      closeLock();
+      wrap.classList.remove("collapsed");
+      showToast("Saisie déverrouillée 🔓");
+      setLockedUI();
+    } else {
+      el("#lockMsg").textContent = "Code incorrect.";
+    }
+  });
+
+  // Init: auto-load from cloud, keep locked by default
+  (async function init(){
+    await loadFromCloud();
+    setLockedUI();
+  })();
 })();
 </script>
 </body>
