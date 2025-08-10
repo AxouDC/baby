@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Pronostics Bébé — v5.4 (Cloud + Verrou)</title>
+  <title>Dashboard Pronostics Bébé — v5.5 (Bouton visible + Histogramme)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
@@ -11,9 +11,10 @@
     html,body{height:100%}
     body{ margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
       color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%); }
-    header{padding:24px 20px 8px; position:sticky; top:0; z-index:20; backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.6) 60%, rgba(15,18,24,0));}
-    h1{margin:0 0 6px; font-size:22px}
-    .sub{color:var(--muted); font-size:13px}
+    header{padding:16px 20px; position:sticky; top:0; z-index:30; backdrop-filter: blur(6px); background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.6) 60%, rgba(15,18,24,0)); display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+    h1{margin:0; font-size:20px}
+    .sub{color:var(--muted); font-size:12px}
+    .spacer{flex:1}
     .wrap{padding:14px 20px 28px; display:grid; grid-template-columns: var(--left) 1fr; gap:16px; transition: grid-template-columns .2s ease;}
     .wrap.collapsed{ grid-template-columns: 1fr; }
     .wrap.collapsed #panelLeft{ display:none; }
@@ -41,7 +42,6 @@
     tr:hover td{background:#121826}
     .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
     .muted{color:var(--muted)}
-    canvas{width:100% !important; height:280px !important}
     .toolbar{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
     .toolbar > *{flex:1 0 auto}
     .note{font-size:12px; color:#9fb0c7; margin-top:6px}
@@ -63,15 +63,23 @@
     #lockCard h3{ margin:0 0 6px }
     #lockCard .muted{ display:block; margin-bottom:10px }
     #lockCard input{ text-align:center; letter-spacing:4px; font-weight:700; font-size:18px }
+
+    /* Chart sizing */
+    .chartBox{height:300px; padding:8px}
+    canvas{width:100% !important; height:100% !important}
   </style>
 </head>
 <body>
 <header>
-  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.4 Cloud</span></h1>
-  <div class="sub">Données synchronisées avec Google Sheets. Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.5</span></h1>
+  <div class="sub">Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+  <div class="spacer"></div>
+  <!-- BOUTON TOUJOURS VISIBLE -->
+  <button class="primary" id="btnUnlockGlobal">🔓 Déverrouiller la saisie</button>
 </header>
 
-<div class="wrap collapsed" id="wrap">
+<!-- Par défaut: panneau visible (pas de 'collapsed' pour éviter de cacher le bouton) -->
+<div class="wrap" id="wrap">
   <!-- Colonne gauche : Cloud + Form (protégés) -->
   <section class="card" id="panelLeft">
     <div class="hd">
@@ -151,8 +159,8 @@
 
       <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px">
         <div class="card">
-          <div class="hd">Répartition Fille / Garçon</div>
-          <div class="bd"><canvas id="chartSexe"></canvas></div>
+          <div class="hd">Répartition Fille / Garçon (Histogramme)</div>
+          <div class="bd chartBox"><canvas id="chartSexe"></canvas></div>
         </div>
         <div class="card">
           <div class="hd">Prénoms proposés</div>
@@ -235,7 +243,7 @@
   const PASSCODE = "2983";
   const COLS = ["Joueur","Sexe","Prénom","Taille (cm)","Poids (kg)","Date"];
   let rows = []; let filtered = []; let editIndex = null;
-  let charts = {sexe:null};
+  let chartSexe = null;
   let unlocked = false;
 
   const el = (s) => document.querySelector(s);
@@ -429,6 +437,29 @@
     return rows.indexOf(target);
   }
 
+  function buildChartSexe(){
+    const counts = {Fille:0, "Garçon":0}; // on ignore Autre pour l'histogramme
+    rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; });
+    const ctx = document.getElementById("chartSexe");
+    if(chartSexe) chartSexe.destroy();
+    chartSexe = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Fille","Garçon"],
+        datasets: [{ data: [counts.Fille, counts["Garçon"]] }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { grid: { display:false } },
+          y: { beginAtZero:true, ticks: { precision:0 } }
+        }
+      }
+    });
+  }
+
   function computeStats(){
     const nums = (key)=> rows.map(r=>r[key]).filter(v=>typeof v==="number" && isFinite(v));
     const poids = nums("Poids (kg)"); const taille = nums("Taille (cm)");
@@ -475,18 +506,7 @@
     });
   }
 
-  function buildCharts(){
-    if(charts.sexe) charts.sexe.destroy();
-    const counts = {Fille:0, "Garçon":0, Autre:0};
-    rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; else counts.Autre++; });
-    charts.sexe = new Chart(document.getElementById("chartSexe"), {
-      type: "pie",
-      data: { labels: ["Fille","Garçon","Autre/—"], datasets: [{ data: [counts.Fille, counts["Garçon"], counts.Autre] }] },
-      options: { plugins: { legend: { position: "bottom" } } }
-    });
-  }
-
-  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; setLockedUI(); }
+  function refresh(){ filterAndSort(); renderTable(); computeStats(); buildChartSexe(); el("#chkAll").checked = false; setLockedUI(); }
 
   // Cloud sync (GET/POST)
   el("#btnCloudLoad").addEventListener("click", loadFromCloud);
@@ -569,7 +589,7 @@
   btnToggle.addEventListener("click", ()=>{ wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; });
   btnShow.addEventListener("click", ()=>{ wrap.classList.remove("collapsed"); btnShow.style.display="none"; });
 
-  // Lock modal
+  // Lock modal (boutons visibles PARTOUT)
   const mask = el("#lockMask");
   function openLock(){
     el("#lockMsg").textContent = "";
@@ -581,21 +601,20 @@
     mask.style.display = "none";
   }
   function setLockedUI(){
-    // disable all input controls when locked
     const disable = (sel, d) => document.querySelectorAll(sel).forEach(x=> x.disabled = d);
     disable("#btnCloudSave", !unlocked);
     disable("#btnDeleteSel", !unlocked);
     disable("#btnAddRow", !unlocked);
     document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
   }
-  el("#btnUnlock").addEventListener("click", openLock);
-  el("#btnLockCancel").addEventListener("click", closeLock);
-  el("#btnLockOk").addEventListener("click", ()=>{
+  document.getElementById("btnUnlock").addEventListener("click", openLock);
+  document.getElementById("btnUnlockGlobal").addEventListener("click", openLock);
+  document.getElementById("btnLockCancel").addEventListener("click", closeLock);
+  document.getElementById("btnLockOk").addEventListener("click", ()=>{
     const v = el("#lockInput").value.trim();
     if(v === PASSCODE){
       unlocked = true;
       closeLock();
-      wrap.classList.remove("collapsed");
       showToast("Saisie déverrouillée 🔓");
       setLockedUI();
     } else {
