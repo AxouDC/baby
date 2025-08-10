@@ -62,8 +62,8 @@
 </head>
 <body>
 <header>
-  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.3 Cloud</span></h1>
-  <div class="sub">Données synchronisées avec Google Sheets. Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+  <h1>Pronostics Bébé</h1>
+  <div class="sub">Données synchronisées avec Google Sheets.</div>
 </header>
 
 <div class="wrap" id="wrap">
@@ -81,8 +81,6 @@
         <button id="btnCloudSave">Enregistrer vers Google Sheets</button>
         <span class="status" id="cloudStatus"></span>
       </div>
-
-      <div class="note">Cloud only : toutes les données sont lues/écrites dans Google Sheets. La date reste sans heure (JJ/MM/AAAA à l’affichage/export).</div>
 
       <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
 
@@ -124,7 +122,6 @@
           <button type="button" id="btnCancel" class="ghost">Annuler</button>
           <span class="pill" id="editFlag" style="display:none">Mode édition</span>
         </div>
-        <div class="note">Après avoir ajouté/édité, clique <b>Enregistrer vers Google Sheets</b> pour pousser les changements.</div>
       </form>
     </div>
   </section>
