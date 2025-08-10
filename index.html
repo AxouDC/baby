@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Pronostics Bébé — v1.4 (Cloud)</title>
+  <title>Dashboard Pronostics Bébé — v1.5 (Cloud only)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
@@ -16,7 +16,8 @@
     h1{margin:0 0 6px; font-size:22px}
     .sub{color:var(--muted); font-size:13px}
     .wrap{padding:14px 20px 28px; display:grid; grid-template-columns: var(--left) 1fr; gap:16px; transition: grid-template-columns .2s ease;}
-    .wrap.wide{ --left: 800px; }
+    .wrap.collapsed{ grid-template-columns: 1fr; }
+    .wrap.collapsed #panelLeft{ display:none; }
     .card{background:var(--card); border-radius:var(--br); border:1px solid #232a36; box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset}
     .card > .hd{padding:14px 16px; border-bottom:1px solid #232a36; font-weight:600; display:flex; align-items:center; gap:10px; justify-content:space-between;}
     .card > .bd{padding:14px 16px}
@@ -43,40 +44,35 @@
     canvas{width:100% !important; height:280px !important}
     .toolbar{display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap}
     .toolbar > *{flex:1 0 auto}
-    .note{font-size:12px; color:var(--muted); margin-top:6px}
-    .footer{padding:16px; color:#7e8a9a; font-size:12px; text-align:center}
+    .note{font-size:12px; color:#9fb0c7; margin-top:6px}
     .status{font-size:12px; color:#cbd5e1}
-    @media (max-width: 1200px){ .wrap{ --left: 600px; } }
-    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } .wrap.wide{ --left: auto; } .kpis{grid-template-columns:repeat(2,1fr)}
-    }
+    .toggle-wrap{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    @media (max-width: 980px){ .wrap{ grid-template-columns: 1fr; } .wrap #panelLeft{ order:2 } }
   </style>
 </head>
 <body>
 <header>
-  <h1>Dashboard — Pronostics Bébé <span class="pill">v1.4 Cloud</span></h1>
-  <div class="sub">Même interface, mais les données sont synchronisées avec Google Sheets (<b>Pronostics</b>). URL backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+  <h1>Dashboard — Pronostics Bébé <span class="pill">v1.5 Cloud</span></h1>
+  <div class="sub">Données synchronisées avec Google Sheets (<b>Pronostics</b>). Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
 </header>
 
 <div class="wrap" id="wrap">
-  <section class="card">
+  <!-- Colonne gauche : Cloud + Form -->
+  <section class="card" id="panelLeft">
     <div class="hd">
-      <span>Données</span>
-      <div class="btns" style="gap:6px">
-        <button class="ghost" id="btnWiden" title="Agrandir/Rétrécir la colonne de saisie">↔️ Agrandir</button>
+      <span>Données (Google Sheets)</span>
+      <div class="toggle-wrap">
+        <button class="ghost" id="btnTogglePanel" title="Masquer/Afficher ce panneau">Masquer le panneau</button>
       </div>
     </div>
     <div class="bd">
-      <div class="toolbar">
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
-        <button class="primary" id="btnExport">Exporter CSV</button>
-        <button class="ghost" id="btnReset">Réinitialiser (local)</button>
-      </div>
       <div class="toolbar">
         <button class="primary" id="btnCloudLoad">Charger depuis Google Sheets</button>
         <button id="btnCloudSave">Enregistrer vers Google Sheets</button>
         <span class="status" id="cloudStatus"></span>
       </div>
-      <div class="note">Saisie sur une seule colonne (large). La <b>Date</b> est sans heure (JJ/MM/AAAA à l’affichage/export).</div>
+
+      <div class="note">Ce tableau ne stocke rien en local. Toutes les données sont lues/écrites dans Google Sheets.</div>
 
       <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
 
@@ -114,19 +110,21 @@
           </div>
         </div>
         <div class="btns" style="margin-top:10px">
-          <button type="submit" class="primary">Enregistrer</button>
+          <button type="submit" class="primary">Enregistrer dans le tableau (local)</button>
           <button type="button" id="btnCancel" class="ghost">Annuler</button>
           <span class="pill" id="editFlag" style="display:none">Mode édition</span>
         </div>
+        <div class="note">Après avoir ajouté/édité, clique <b>Enregistrer vers Google Sheets</b> pour pousser les changements.</div>
       </form>
-
-      <div class="note">Astuce : double‑clique une ligne du tableau pour l’éditer.</div>
-      <div class="note" id="importLog" style="margin-top:8px"></div>
     </div>
   </section>
 
-  <section class="card">
-    <div class="hd">Vue d’ensemble</div>
+  <!-- Colonne droite : Stats + Tableau -->
+  <section class="card" id="panelRight">
+    <div class="hd">
+      <span>Vue d’ensemble</span>
+      <button class="ghost" id="btnShowPanel" style="display:none">Afficher le panneau de saisie</button>
+    </div>
     <div class="bd">
       <div class="kpis">
         <div class="kpi"><span class="muted">Entrées</span> <b id="kpiCount">0</b></div>
@@ -189,9 +187,8 @@
   </section>
 </div>
 
-<div class="footer">Données synchronisées via Google Apps Script & Google Sheets. LocalStorage utilisé en cache. Aucun compte sur le dashboard.</div>
+<div class="footer">Cloud only — Google Apps Script & Google Sheets. Aucun stockage local automatique (sauf état en RAM pendant l’édition).</div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -201,7 +198,7 @@
   let rows = []; let filtered = []; let editIndex = null;
   let charts = {sexe:null, poids:null, dates:null};
 
-  const el = sel => document.querySelector(sel);
+  const el = (s) => document.querySelector(s);
   const fmt = {
     kg: v => (isFinite(v)? (Math.round(v*1000)/1000).toFixed(3) : ""),
     cm: v => (isFinite(v)? Math.round(v) : ""),
@@ -216,9 +213,6 @@
     },
   };
   const isBlank = (v) => v==null || (typeof v==="string" && v.trim()==="");
-
-  function saveLocal(){ localStorage.setItem("pronostics_bebe_cloud_v14", JSON.stringify(rows)); }
-  function loadLocal(){ try{ const s=localStorage.getItem("pronostics_bebe_cloud_v14"); if(s) rows=JSON.parse(s); }catch(e){} }
 
   function normalizeSexe(s){
     if(!s) return "";
@@ -272,16 +266,14 @@
     return arr
       .filter(obj => obj && typeof obj==="object")
       .filter(obj => !isHeaderRow(obj) && !isSummaryRow(obj) && !isEmptyCore(obj))
-      .map(obj => {
-        const out = {};
-        out["Joueur"] = (obj["Joueur"]??"").toString().trim();
-        out["Sexe"] = normalizeSexe(obj["Sexe"]);
-        out["Prénom"] = (obj["Prénom"]??"").toString().trim();
-        out["Taille (cm)"] = parseNumber(obj["Taille (cm)"]);
-        out["Poids (kg)"] = parseNumber(obj["Poids (kg)"]);
-        out["Date"] = parseDateAny(obj["Date"]);
-        return out;
-      });
+      .map(obj => ({ 
+        "Joueur": (obj["Joueur"]??"").toString().trim(),
+        "Sexe": normalizeSexe(obj["Sexe"]),
+        "Prénom": (obj["Prénom"]??"").toString().trim(),
+        "Taille (cm)": parseNumber(obj["Taille (cm)"]),
+        "Poids (kg)": parseNumber(obj["Poids (kg)"]),
+        "Date": parseDateAny(obj["Date"]),
+      }));
   }
 
   function renderTable(){
@@ -304,7 +296,7 @@
     el("#kpiCount").textContent = String(rows.length);
   }
   function escapeHtml(s){
-    return String(s??"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+    return String(s??"").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;","&gt;":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
   }
   function filterAndSort(){
     const q = el("#search").value.trim().toLowerCase();
@@ -325,6 +317,7 @@
       });
     }
   }
+
   function startEdit(globalIdx){
     if(globalIdx==null) return;
     editIndex = globalIdx;
@@ -361,7 +354,7 @@
       "Date": iso
     };
     if(editIndex!=null){ rows[editIndex] = obj; } else { rows.push(obj); }
-    saveLocal(); cancelEdit(); refresh();
+    cancelEdit(); refresh();
   }
 
   function deleteSelected(){
@@ -369,7 +362,7 @@
     const toDeleteGlobal = checks.filter(c=>c.checked).map(c=> findGlobalIndex(parseInt(c.dataset.idx,10))).filter(i=>i!=null);
     if(!toDeleteGlobal.length) return;
     rows = rows.filter((_,i)=> !toDeleteGlobal.includes(i));
-    saveLocal(); refresh();
+    refresh();
   }
   function findGlobalIndex(filteredIdx){
     const target = filtered[filteredIdx];
@@ -413,7 +406,7 @@
       const binsize = 100; const minv = Math.min(...poidsG); const maxv = Math.max(...poidsG);
       const labels = []; const values = [];
       for(let x = Math.floor(minv/binsize)*binsize; x <= Math.ceil(maxv/binsize)*binsize; x+=binsize){
-        const next = x+binsize; labels.push(f"{x}–{next}g");
+        const next = x+binsize; labels.push(`${x}–${next}g`);
         values.push(poidsG.filter(v=> v>=x && v<next).length);
       }
       charts.poids = new Chart(ctxPoids, {
@@ -444,52 +437,9 @@
 
   function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; }
 
-  document.getElementById("fileInput").addEventListener("change", async (ev)=>{
-    const file = ev.target.files[0]; if(!file) return;
-    document.getElementById("search").value = ""; document.getElementById("sortBy").value = "";
-    const ext = file.name.split(".").pop().toLowerCase();
-    let imported = 0;
-    try{
-      if(ext==="csv"){
-        const txt = await file.text();
-        const arr = csvToObjects(txt); imported = arr.length; rows = cleanAndNormalize(arr);
-      } else {
-        const data = await file.arrayBuffer();
-        const wb = XLSX.read(data, {type:"array"});
-        const first = wb.SheetNames[0];
-        const sheet = wb.Sheets[first];
-        const arr = XLSX.utils.sheet_to_json(sheet, {defval:null}); imported = arr.length; rows = cleanAndNormalize(arr);
-      }
-      document.getElementById("importLog").textContent = `Import local : ${imported} lignes lues, ${rows.length} retenues.`;
-    } catch(err){
-      console.error(err); document.getElementById("importLog").textContent = "Erreur d'import : " + err.message;
-    }
-    saveLocal(); refresh();
-  });
-
-  document.getElementById("btnExport").addEventListener("click", ()=>{
-    const csv = toCSV(rows);
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "pronostics_bebe.csv"; a.click(); URL.revokeObjectURL(a.href);
-  });
-  document.getElementById("btnReset").addEventListener("click", ()=>{
-    if(confirm("Effacer les données locales (cache) ?")) { rows = []; localStorage.removeItem("pronostics_bebe_cloud_v14"); document.getElementById("importLog").textContent = ""; refresh(); }
-  });
-
-  document.getElementById("chkAll").addEventListener("change", (e)=>{ document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = e.target.checked); });
-  document.getElementById("btnDeleteSel").addEventListener("click", deleteSelected);
-
-  document.getElementById("search").addEventListener("input", ()=>{ filterAndSort(); renderTable(); });
-  document.getElementById("sortBy").addEventListener("change", ()=>{ filterAndSort(); renderTable(); });
-
-  document.getElementById("form").addEventListener("submit", submitForm);
-  document.getElementById("btnCancel").addEventListener("click", cancelEdit);
-  document.getElementById("btnAddRow").addEventListener("click", ()=>{ cancelEdit(); document.getElementById("fJoueur").focus(); });
-
-  document.getElementById("btnWiden").addEventListener("click", ()=>{ document.getElementById("wrap").classList.toggle("wide"); });
-
-  document.getElementById("btnCloudLoad").addEventListener("click", loadFromCloud);
-  document.getElementById("btnCloudSave").addEventListener("click", saveToCloud);
+  // Cloud sync only
+  el("#btnCloudLoad").addEventListener("click", loadFromCloud);
+  el("#btnCloudSave").addEventListener("click", saveToCloud);
 
   async function loadFromCloud(){
     setCloudStatus("Chargement…");
@@ -499,7 +449,7 @@
       const data = await res.json();
       if(!data.rows) throw new Error("Réponse invalide");
       rows = cleanAndNormalize(data.rows);
-      saveLocal(); refresh();
+      refresh();
       setCloudStatus(`Chargé (${rows.length} lignes).`);
     } catch(e){
       console.error(e); setCloudStatus("Erreur de chargement : " + e.message, true);
@@ -532,44 +482,33 @@
     }
   }
   function setCloudStatus(msg, isErr=false){
-    const elS = document.getElementById("cloudStatus");
+    const elS = el("#cloudStatus");
     elS.textContent = msg;
     elS.style.color = isErr ? "#ffb4b4" : "#cbd5e1";
   }
 
-  function toCSV(arr){
-    const cols = COLS; const esc = s => `"` + String(s??"").replace(/"/g,'""') + `"`;
-    const lines = [ cols.join(",") ];
-    arr.forEach(r=>{
-      const obj = Object.assign({}, r);
-      const cells = cols.map(k => k==="Date" ? fmt.date(obj[k]) : obj[k]);
-      lines.push(cells.map(esc).join(","));
-    });
-    return lines.join("\\n");
-  }
-  function csvToObjects(csv){
-    const lines = csv.split(/\\r?\\n/).filter(l=>l.trim().length);
-    const headers = lines[0].split(",").map(h=>h.trim());
-    return lines.slice(1).map(line=>{
-      const values = parseCsvLine(line);
-      const obj = {}; headers.forEach((h,i)=> obj[h] = values[i] ?? null);
-      return obj;
-    });
-  }
-  function parseCsvLine(line){
-    const out = []; let cur = ""; let inQ=false;
-    for(let i=0;i<line.length;i++){ const ch = line[i];
-      if(inQ){ if(ch === '"'){ if(line[i+1] === '"'){ cur+='"'; i++; } else { inQ=false; } } else cur += ch; }
-      else { if(ch === '"') inQ=true; else if(ch === ","){ out.push(cur); cur=""; } else cur += ch; }
-    }
-    out.push(cur); return out;
-  }
+  // Table actions
+  el("#chkAll").addEventListener("change", (e)=>{ document.querySelectorAll('#tbl tbody input[type="checkbox"]').forEach(c=> c.checked = e.target.checked); });
+  el("#btnDeleteSel").addEventListener("click", deleteSelected);
+  el("#btnAddRow").addEventListener("click", ()=>{ cancelEdit(); el("#fJoueur").focus(); });
 
-  (async function init(){
-    loadLocal();
-    refresh();
-    await loadFromCloud();
-  })();
+  // Recherche / Tri
+  el("#search").addEventListener("input", ()=>{ filterAndSort(); renderTable(); });
+  el("#sortBy").addEventListener("change", ()=>{ filterAndSort(); renderTable(); });
+
+  // Form submit
+  el("#form").addEventListener("submit", submitForm);
+  el("#btnCancel").addEventListener("click", cancelEdit);
+
+  // Toggle panel visibility
+  const wrap = el("#wrap");
+  const btnToggle = el("#btnTogglePanel");
+  const btnShow = el("#btnShowPanel");
+  btnToggle.addEventListener("click", ()=>{ wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; });
+  btnShow.addEventListener("click", ()=>{ wrap.classList.remove("collapsed"); btnShow.style.display="none"; });
+
+  // Init: auto-load from cloud
+  (async function init(){ await loadFromCloud(); })();
 })();
 </script>
 </body>
