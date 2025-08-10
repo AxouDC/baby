@@ -3,48 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inventaire Bébé v2.2</title>
+<title>Inventaire Bébé v2.3.2</title>
 <style>
 body{font-family:Arial, sans-serif;background:#f4f4f4;margin:0;padding:0}
 header{background:#333;color:#fff;padding:10px 20px}
 h1{margin:0;font-size:20px}
 .container{padding:20px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff}
 th,td{border:1px solid #ccc;padding:8px;text-align:left}
 tr.red{background:#ffcccc}
 tr.yellow{background:#fff6cc}
 tr.green{background:#ccffcc}
 button{padding:6px 10px;margin:4px;cursor:pointer}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable .arrow{font-size:11px;margin-left:6px;color:#666}
 #toast{position:fixed;bottom:20px;right:20px;background:#4caf50;color:#fff;padding:10px;border-radius:4px;display:none}
 .modal{display:none;position:fixed;z-index:10;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.4)}
-.modal-content{background:#fff;margin:10% auto;padding:20px;border:1px solid #888;width:300px;border-radius:6px}
+.modal-content{background:#fff;margin:10% auto;padding:20px;border:1px solid #888;width:340px;border-radius:6px}
 .close{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer}
+label{display:block;margin:8px 0 4px}
+input[type="number"], input[type="text"], select{width:100%;padding:6px}
+#tabs button{margin-right:6px}
+.smallmuted{color:#666;font-size:12px}
 </style>
 </head>
 <body>
 <header>
-<h1>Inventaire Bébé</h1>
+  <h1>Inventaire Bébé <small style="font-weight:normal">v2.3.2</small></h1>
 </header>
+
 <div class="container">
-<div id="tabs"></div>
-<button id="addBtn">➕ Ajouter dans cet onglet</button>
-<div id="tableContainer"></div>
+  <div id="tabs"></div>
+  <button id="addBtn">➕ Ajouter dans cet onglet</button>
+  <span id="status" class="smallmuted"></span>
+  <div id="tableContainer"></div>
 </div>
 
 <div id="addModal" class="modal">
-<div class="modal-content">
-<span class="close" id="closeModal">&times;</span>
-<h3>Ajouter dans <span id="modalSheet"></span></h3>
-<label>Objet:</label>
-<select id="objSelect"></select><br>
-ou nouveau: <input id="newObj"><br>
-<label>Taille:</label>
-<select id="tailleSelect"></select><br>
-ou nouvelle: <input id="newTaille"><br>
-<label>Quantité à ajouter:</label>
-<input type="number" id="addQty" min="1" value="1"><br><br>
-<button id="confirmAdd">Valider</button>
-</div>
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h3>Ajouter dans <span id="modalSheet"></span></h3>
+    <label>Objet existant</label>
+    <select id="objSelect"></select>
+    <label>…ou nouvel objet</label>
+    <input id="newObj" type="text">
+    <label>Taille existante</label>
+    <select id="tailleSelect"></select>
+    <label>…ou nouvelle taille</label>
+    <input id="newTaille" type="text">
+    <label>Quantité à ajouter</label>
+    <input type="number" id="addQty" min="1" value="1">
+    <div style="text-align:right;margin-top:12px">
+      <button id="confirmAdd">Valider</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -52,6 +64,11 @@ ou nouvelle: <input id="newTaille"><br>
 <script>
 const execUrl = "https://script.google.com/macros/s/AKfycbwLChjg9xy9xjzUkzHMlvhtyPW-EJ9VujnMIZxOsCXZcsGqq_ZXvVkbJcPK7uPleiZh1g/exec";
 let data = {}, currentSheet = "Habits";
+let originalOrder = { "Habits": [], "Accessoires": [] };
+let sortState = {
+  "Habits": { key: null, dir: 0 },
+  "Accessoires": { key: null, dir: 0 }
+};
 
 function showToast(msg, ok=true){
   const t = document.getElementById('toast');
@@ -61,8 +78,15 @@ function showToast(msg, ok=true){
   setTimeout(()=>t.style.display='none',3000);
 }
 
+function setStatus(msg, err=false){
+  const s = document.getElementById('status');
+  s.textContent = msg || '';
+  s.style.color = err ? '#c0392b' : '#666';
+}
+
 function colorClass(nec, pos){
   nec = parseInt(nec)||0; pos = parseInt(pos)||0;
+  if(pos > nec) return 'green';
   if(nec>0 && pos==0) return 'red';
   if(nec>0 && pos<nec) return 'yellow';
   if(nec>0 && pos>=nec) return 'green';
@@ -81,10 +105,39 @@ function renderTabs(){
   });
 }
 
+function arrowFor(col){
+  const st = sortState[currentSheet];
+  if(st.key !== col || st.dir===0) return '';
+  return st.dir === 1 ? '▲' : '▼';
+}
+
+function cycleSort(col){
+  const st = sortState[currentSheet];
+  if(st.key !== col){ st.key = col; st.dir = 1; }
+  else if(st.dir === 1){ st.dir = -1; }
+  else if(st.dir === -1){ st.key = null; st.dir = 0; }
+  renderTable();
+}
+
 function renderTable(){
   const cont = document.getElementById('tableContainer');
-  const rows = data[currentSheet] || [];
-  let html = '<table><tr><th>Objet</th><th>Taille</th><th>Qté nécessaire</th><th>Qté possédée</th><th>Saison</th></tr>';
+  let rows = (data[currentSheet] || []).slice();
+  const st = sortState[currentSheet];
+  if(st.key && st.dir){
+    const key = st.key;
+    rows.sort((a,b)=> String(a[key]||'').localeCompare(String(b[key]||''), 'fr') * st.dir);
+  } else {
+    const order = originalOrder[currentSheet];
+    rows.sort((a,b)=> (order.indexOf(a.__oid) - order.indexOf(b.__oid)));
+  }
+  let html = `<table>
+    <tr>
+      <th class="sortable" data-col="Objet">Objet <span class="arrow">${arrowFor('Objet')}</span></th>
+      <th class="sortable" data-col="Taille">Taille <span class="arrow">${arrowFor('Taille')}</span></th>
+      <th>Qté nécessaire</th>
+      <th>Qté possédée</th>
+      <th>Saison</th>
+    </tr>`;
   rows.forEach(r=>{
     html += `<tr class="${colorClass(r['Qté nécessaire'], r['Qté possédée'])}">
       <td>${r.Objet||''}</td>
@@ -96,48 +149,100 @@ function renderTable(){
   });
   html += '</table>';
   cont.innerHTML = html;
+  cont.querySelectorAll('th.sortable').forEach(th=>{
+    th.onclick = () => cycleSort(th.getAttribute('data-col'));
+  });
 }
 
 async function loadSheet(name){
-  const res = await fetch(execUrl+'?sheet='+encodeURIComponent(name));
+  const res = await fetch(execUrl+'?sheet='+encodeURIComponent(name), {cache:"no-store"});
+  if(!res.ok) throw new Error("HTTP "+res.status);
   const js = await res.json();
-  const rows = (js.rows||[]).filter(r=>(r.Objet||r.Taille||r.Saison));
+  const rows = (js.rows||[])
+    .filter(r=> (r && (r.Objet||r.Taille||r.Saison)))
+    .map((r, idx)=>{ r.__oid = idx; return r; });
   data[name] = rows;
+  originalOrder[name] = rows.map(r=>r.__oid);
 }
 
 async function loadAll(){
-  await loadSheet('Habits');
-  await loadSheet('Accessoires');
-  renderTabs();
-  renderTable();
+  try {
+    setStatus("Chargement…");
+    await loadSheet('Habits');
+    await loadSheet('Accessoires');
+    renderTabs();
+    renderTable();
+    setStatus("Chargé ✅");
+  } catch(e){
+    console.error(e);
+    setStatus("Erreur : "+(e.message||e), true);
+    showToast("Échec du chargement", false);
+  }
+}
+
+function fillSelect(selectEl, items){
+  while(selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
+  const opt0 = document.createElement('option'); opt0.value=""; opt0.textContent="--";
+  selectEl.appendChild(opt0);
+  items.forEach(v=>{
+    const opt = document.createElement('option'); opt.value = String(v); opt.textContent = String(v);
+    selectEl.appendChild(opt);
+  });
 }
 
 document.getElementById('addBtn').onclick=()=>{
   const modal = document.getElementById('addModal');
   document.getElementById('modalSheet').textContent = currentSheet;
-  const objs = [...new Set((data[currentSheet]||[]).map(r=>r.Objet).filter(Boolean))];
-  const objSel = document.getElementById('objSelect');
-  objSel.innerHTML = '<option value="">--</option>'+objs.map(o=>`<option>{o}</option>`).join('');
-  const tailles = [...new Set((data[currentSheet]||[]).map(r=>r.Taille).filter(Boolean))];
-  const tailleSel = document.getElementById('tailleSelect');
-  tailleSel.innerHTML = '<option value="">--</option>'+tailles.map(o=>`<option>{o}</option>`).join('');
+  const rows = data[currentSheet] || [];
+  const objs = Array.from(new Set(rows.map(r=>r.Objet).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
+  fillSelect(document.getElementById('objSelect'), objs);
+  const tailles = Array.from(new Set(rows.map(r=>r.Taille).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
+  fillSelect(document.getElementById('tailleSelect'), tailles);
+  document.getElementById('objSelect').onchange = () => {
+    const val = document.getElementById('objSelect').value;
+    if(!val) { fillSelect(document.getElementById('tailleSelect'), tailles); return; }
+    const tset = Array.from(new Set(rows.filter(r=>r.Objet===val).map(r=>r.Taille).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
+    fillSelect(document.getElementById('tailleSelect'), tset);
+  };
   modal.style.display='block';
 };
 
-document.getElementById('closeModal').onclick=()=>document.getElementById('addModal').style.display='none';
+document.getElementById('closeModal').onclick=()=>{
+  document.getElementById('addModal').style.display='none';
+};
 
 document.getElementById('confirmAdd').onclick=async()=>{
-  const obj = document.getElementById('newObj').value || document.getElementById('objSelect').value;
-  const taille = document.getElementById('newTaille').value || document.getElementById('tailleSelect').value;
+  const obj = document.getElementById('newObj').value.trim() || document.getElementById('objSelect').value.trim();
+  const taille = document.getElementById('newTaille').value.trim() || document.getElementById('tailleSelect').value.trim();
   const qty = parseInt(document.getElementById('addQty').value)||0;
-  if(!obj || !taille || qty<=0){alert('Champs incomplets');return;}
+  if(!obj || !taille || qty<=0){ alert('Champs incomplets'); return; }
   let rows = data[currentSheet]||[];
-  let found = rows.find(r=>r.Objet===obj && r.Taille===taille);
+  let found = rows.find(r=>String(r.Objet)===obj && String(r.Taille)===taille);
   if(found) found['Qté possédée'] = (parseInt(found['Qté possédée'])||0) + qty;
-  else rows.push({Objet:obj, Taille:taille, 'Qté nécessaire':0, 'Qté possédée':qty, Saison:''});
+  else {
+    const newOid = (originalOrder[currentSheet].length ? Math.max(...originalOrder[currentSheet]) + 1 : 0);
+    const newRow = {Objet:obj, Taille:taille, 'Qté nécessaire':0, 'Qté possédée':qty, Saison:'' , __oid:newOid};
+    rows.push(newRow);
+    originalOrder[currentSheet].push(newOid);
+  }
   data[currentSheet]=rows;
-  await fetch(execUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'payload='+encodeURIComponent(JSON.stringify({sheet:currentSheet,rows:data[currentSheet]}))});
-  showToast('Ajout effectué ✅', true);
+  try {
+    setStatus("Enregistrement…");
+    const payload = { sheet: currentSheet, rows: rows.map(r=>{const o={...r}; delete o.__oid; return o;}) };
+    const res = await fetch(execUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'payload='+encodeURIComponent(JSON.stringify(payload))
+    });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    await res.json().catch(()=>({ok:true}));
+    showToast('Ajout effectué ✅', true);
+    setStatus("Enregistré ✅");
+  } catch(e) {
+    console.error(e);
+    showToast("Échec de l'enregistrement", false);
+    setStatus("Erreur : "+(e.message||e), true);
+  }
   document.getElementById('addModal').style.display='none';
   renderTable();
 };
