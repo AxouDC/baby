@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Pronostics Bébé — v5.1 (Cloud only)</title>
+  <title>Dashboard Pronostics Bébé — v5.3 (Cloud only)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
@@ -29,6 +29,7 @@
     button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
     button.ghost{background:transparent; border-color:#30384a}
     button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
+    button[disabled]{opacity:.6; cursor:not-allowed}
     .btns{display:flex; gap:8px; flex-wrap:wrap}
     .grid{display:grid; gap:12px}
     #form .grid{ grid-template-columns: 1fr; }
@@ -61,8 +62,8 @@
 </head>
 <body>
 <header>
-  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.1 Cloud</span></h1>
-  <div class="sub">Données synchronisées avec Google Sheets (<b>Pronostics</b>). Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
+  <h1>Dashboard — Pronostics Bébé <span class="pill">v5.3 Cloud</span></h1>
+  <div class="sub">Données synchronisées avec Google Sheets. Backend : <span class="muted">https://script.google.com/macros/s/AKfycbxpUz1Oh4YtlZCJ1z-UMuISVa_Nkl4UjcdvbX7VLe9wfmqNFSXGw4AHN2n2ENOmQZAb/exec</span></div>
 </header>
 
 <div class="wrap" id="wrap">
@@ -142,7 +143,7 @@
         <div class="kpi"><span class="muted">Date moyenne</span> <b id="kpiDateMoy">—</b></div>
       </div>
 
-      <div class="grid" style="grid-template-columns: 2fr 3fr; gap:12px; margin-bottom:12px">
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px">
         <div class="card">
           <div class="hd">Répartition Fille / Garçon</div>
           <div class="bd"><canvas id="chartSexe"></canvas></div>
@@ -422,17 +423,14 @@
       el("#kpiDateMoy").textContent = "—";
     }
 
-    // Prénoms par sexe (uniques + compte)
+    // Prénoms par sexe
     const mapF = new Map(), mapG = new Map();
     rows.forEach(r=>{
       const s = normalizeSexe(r["Sexe"]);
       const p = (r["Prénom"]||"").trim();
       if(!p) return;
-      if(s==="Fille"){
-        mapF.set(p, (mapF.get(p)||0)+1);
-      } else if(s==="Garçon"){
-        mapG.set(p, (mapG.get(p)||0)+1);
-      }
+      if(s==="Fille") mapF.set(p, (mapF.get(p)||0)+1);
+      else if(s==="Garçon") mapG.set(p, (mapG.get(p)||0)+1);
     });
     renderChips("#chipsFille", mapF);
     renderChips("#chipsGarcon", mapG);
@@ -445,7 +443,6 @@
       box.innerHTML = '<span class="muted">—</span>';
       return;
     }
-    // tri par fréquence desc puis alpha
     const arr = Array.from(m.entries()).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0], "fr"));
     arr.forEach(([name, count])=>{
       const chip = document.createElement("span");
@@ -459,8 +456,7 @@
     if(charts.sexe) charts.sexe.destroy();
     const counts = {Fille:0, "Garçon":0, Autre:0};
     rows.forEach(r=>{ const s=normalizeSexe(r["Sexe"]); if(s==="Fille") counts.Fille++; else if(s==="Garçon") counts["Garçon"]++; else counts.Autre++; });
-    const ctx = document.getElementById("chartSexe");
-    charts.sexe = new Chart(ctx, {
+    charts.sexe = new Chart(document.getElementById("chartSexe"), {
       type: "pie",
       data: { labels: ["Fille","Garçon","Autre/—"], datasets: [{ data: [counts.Fille, counts["Garçon"], counts.Autre] }] },
       options: { plugins: { legend: { position: "bottom" } } }
@@ -469,14 +465,13 @@
 
   function refresh(){ filterAndSort(); renderTable(); computeStats(); buildCharts(); el("#chkAll").checked = false; }
 
-  // Cloud sync only + toasts + button states
+  // Cloud sync
   el("#btnCloudLoad").addEventListener("click", loadFromCloud);
   el("#btnCloudSave").addEventListener("click", saveToCloud);
 
   async function loadFromCloud(){
     const btn = el("#btnCloudLoad");
-    btn.disabled = true; const old = btn.textContent; btn.textContent = "Chargement…";
-    setCloudStatus("Chargement…");
+    btn.disabled = true; setCloudStatus("Chargement…");
     try {
       const res = await fetch(CLOUD_URL, { method:"GET", cache:"no-store" });
       if(!res.ok) throw new Error("HTTP " + res.status);
@@ -485,20 +480,19 @@
       rows = cleanAndNormalize(data.rows);
       refresh();
       setCloudStatus(`Chargé (${rows.length} lignes).`);
-      showToast("Chargement réussi", true, `${rows.length} lignes`);
+      showToast("Chargement réussi ✅", true, `Lignes: ${rows.length}`);
     } catch(e){
       console.error(e); setCloudStatus("Erreur de chargement : " + e.message, true);
-      showToast("Échec du chargement", false, e.message);
+      showToast("Échec du chargement ❌", false, e.message);
     } finally {
-      btn.disabled = false; btn.textContent = old;
+      btn.disabled = false;
     }
   }
   async function saveToCloud(){
     const btn = el("#btnCloudSave");
-    btn.disabled = true; const old = btn.textContent; btn.textContent = "Enregistrement…";
-    setCloudStatus("Enregistrement…");
+    btn.disabled = true; const oldTxt = btn.textContent; btn.textContent = "Enregistrement…"; setCloudStatus("Enregistrement…");
     try {
-      const payload = {
+      const payloadObj = {
         rows: rows.map(r => ({ 
           "Joueur": r["Joueur"]||"",
           "Sexe": r["Sexe"]||"",
@@ -508,21 +502,23 @@
           "Date": r["Date"] ? fmt.date(r["Date"]) : ""
         }))
       };
+      const body = new URLSearchParams({ payload: JSON.stringify(payloadObj) }).toString();
       const res = await fetch(CLOUD_URL, {
         method:"POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
+        body
       });
       if(!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      if(!data.ok) throw new Error("Réponse invalide");
+      let data = {ok:true};
+      try{ data = await res.json(); }catch{}
+      if(data.ok !== true) throw new Error("Réponse invalide");
       setCloudStatus("Enregistré ✅");
-      showToast("Enregistrement réussi", true);
+      showToast("Enregistrement réussi ✅");
     } catch(e){
-      console.error(e); setCloudStatus("Erreur d'enregistrement : " + e.message, true);
-      showToast("Échec de l'enregistrement", false, e.message);
+      console.error(e); setCloudStatus("Erreur d'enregistrement : " + (e.message||e), true);
+      showToast("Échec de l'enregistrement ❌", false, e.message||String(e));
     } finally {
-      btn.disabled = false; btn.textContent = old;
+      btn.textContent = oldTxt; btn.disabled = false;
     }
   }
   function setCloudStatus(msg, isErr=false){
