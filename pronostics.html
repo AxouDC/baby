@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard Pronostics Bébé — v5.5 (Bouton visible + Histogramme)</title>
+  <title>Dashboard Pronostics Bébé — v5.6 (propre)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{ --left: 520px; --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff; --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px; }
@@ -71,22 +71,20 @@
 </head>
 <body>
 <header>
-  <h1>Pronostics Bébé Alex&Julie<span class="pill">v5.5</span></h1>
+  <h1>Pronostics Bébé Alex&Julie</h1>
   <div class="spacer"></div>
-  <!-- BOUTON TOUJOURS VISIBLE -->
-  <button class="primary" id="btnUnlockGlobal">🔓 Déverrouiller la saisie</button>
 </header>
 
-<!-- Par défaut: panneau visible (pas de 'collapsed' pour éviter de cacher le bouton) -->
-<div class="wrap" id="wrap">
+<!-- Par défaut: panneau FERMÉ -->
+<div class="wrap collapsed" id="wrap">
   <!-- Colonne gauche : Cloud + Form (protégés) -->
   <section class="card" id="panelLeft">
     <div class="hd">
-      <span>Données (Google Sheets)</span>
-      <div class="toggle-wrap">
+      <div class="toggle-wrap"><center>
         <button class="ghost" id="btnTogglePanel" title="Masquer/Afficher ce panneau">Masquer le panneau</button>
+		
         <button class="primary" id="btnUnlock">Déverrouiller la saisie</button>
-      </div>
+      </center></div>
     </div>
     <div class="bd">
       <div class="toolbar">
@@ -95,7 +93,7 @@
         <span class="status" id="cloudStatus"></span>
       </div>
 
-      <div class="note">Mode sécurisé : par défaut, la saisie est verrouillée. Déverrouille avec le code pour modifier/ajouter/supprimer.</div>
+      <div class="note">Mode sécurisé : seuls Alex & Julie peuvent modifier/ajouter/supprimer.</div>
 
       <hr style="border:none; border-top:1px solid #232a36; margin:14px 0">
 
@@ -137,7 +135,6 @@
           <button type="button" id="btnCancel" class="ghost">Annuler</button>
           <span class="pill" id="editFlag" style="display:none">Mode édition</span>
         </div>
-        <div class="note">Après avoir ajouté/édité, clique <b>Enregistrer vers Google Sheets</b> pour pousser les changements.</div>
       </form>
     </div>
   </section>
@@ -146,19 +143,20 @@
   <section class="card" id="panelRight">
     <div class="hd">
       <span>Vue d’ensemble</span>
-      <button class="ghost" id="btnShowPanel" style="display:none">Afficher le panneau de saisie</button>
+      <!-- bouton visible quand le panneau est fermé -->
+      <button class="ghost" id="btnShowPanel">Afficher le panneau de saisie</button>
     </div>
     <div class="bd">
       <div class="kpis">
-        <div class="kpi"><span class="muted">Entrées</span> <b id="kpiCount">0</b></div>
+        <div class="kpi"><span class="muted">Participants</span> <b id="kpiCount">0</b></div>
         <div class="kpi"><span class="muted">Poids moyen (kg)</span> <b id="kpiPoids">—</b></div>
         <div class="kpi"><span class="muted">Taille moyenne (cm)</span> <b id="kpiTaille">—</b></div>
-        <div class="kpi"><span class="muted">Date moyenne</span> <b id="kpiDateMoy">—</b></div>
+        <div class="kpi"><span class="muted">Date moyenne de naissance</span> <b id="kpiDateMoy">—</b></div>
       </div>
 
       <div class="grid" style="grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px">
         <div class="card">
-          <div class="hd">Répartition Fille / Garçon (Histogramme)</div>
+          <div class="hd">Paris Fille / Garçon)</div>
           <div class="bd chartBox"><canvas id="chartSexe"></canvas></div>
         </div>
         <div class="card">
@@ -187,6 +185,7 @@
           <option value="Taille (cm)">Taille (cm)</option>
           <option value="Joueur">Joueur</option>
           <option value="Sexe">Sexe</option>
+          <option value="Prénom">Prénom</option>
         </select>
         <button id="btnAddRow">Ajouter</button>
         <button id="btnDeleteSel" class="danger">Supprimer sélection</button>
@@ -588,7 +587,7 @@
   btnToggle.addEventListener("click", ()=>{ wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; });
   btnShow.addEventListener("click", ()=>{ wrap.classList.remove("collapsed"); btnShow.style.display="none"; });
 
-  // Lock modal (boutons visibles PARTOUT)
+  // Lock modal
   const mask = el("#lockMask");
   function openLock(){
     el("#lockMsg").textContent = "";
@@ -606,10 +605,9 @@
     disable("#btnAddRow", !unlocked);
     document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
   }
-  document.getElementById("btnUnlock").addEventListener("click", openLock);
-  document.getElementById("btnUnlockGlobal").addEventListener("click", openLock);
-  document.getElementById("btnLockCancel").addEventListener("click", closeLock);
-  document.getElementById("btnLockOk").addEventListener("click", ()=>{
+  el("#btnUnlock").addEventListener("click", openLock);
+  el("#btnLockCancel").addEventListener("click", closeLock);
+  el("#btnLockOk").addEventListener("click", ()=>{
     const v = el("#lockInput").value.trim();
     if(v === PASSCODE){
       unlocked = true;
@@ -621,10 +619,12 @@
     }
   });
 
-  // Init: auto-load from cloud, keep locked by default
+  // Init
   (async function init(){
     await loadFromCloud();
     setLockedUI();
+    // on démarre en collapsed : garder le bouton "Afficher le panneau" visible
+    btnShow.style.display = "inline-block";
   })();
 })();
 </script>
