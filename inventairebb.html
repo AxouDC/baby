@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Inventaire Bébé — v1</title>
+  <title>Inventaire Bébé — v2 (Cloud Sheets)</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <style>
     :root{
@@ -17,7 +17,7 @@
       margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;
       color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%);
     }
-    header{padding:24px 20px 10px; position:sticky; top:0; z-index:20;
+    header{padding:20px; position:sticky; top:0; z-index:20;
       background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.5) 60%, rgba(15,18,24,0)); backdrop-filter: blur(6px);}
     h1{margin:0 0 6px; font-size:22px}
     .sub{color:var(--muted); font-size:13px}
@@ -33,6 +33,7 @@
     button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
     button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
     button.small{padding:6px 10px; font-size:12px}
+    button[disabled]{opacity:.6; cursor:not-allowed}
     .tabs{display:flex; gap:6px; flex-wrap:wrap}
     .tab{padding:8px 12px; border-radius:999px; border:1px solid #2a3241; background:#0f131a; color:#cfd7e3; cursor:pointer}
     .tab.active{border-color:#4a6aa0; background:#1a2232; color:#e7edf3}
@@ -44,34 +45,42 @@
     .qtycell input{width:72px; text-align:center}
     .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
     .note{color:var(--muted); font-size:12px}
-    .row-red{ background: linear-gradient(180deg, rgba(255,0,0,.06), transparent 30%); }
-    .row-yellow{ background: linear-gradient(180deg, rgba(255,255,0,.06), transparent 30%); }
-    .row-green{ background: linear-gradient(180deg, rgba(0,255,0,.06), transparent 30%); }
     .chips{display:flex; gap:8px; flex-wrap:wrap}
     .chip{padding:6px 10px; border:1px solid #273245; border-radius:999px; background:#0f1722; font-size:13px}
     .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
     .right{ text-align:right }
     .nowrap{ white-space:nowrap }
+    .row-red{ background: linear-gradient(180deg, rgba(255,0,0,.06), transparent 30%); }
+    .row-yellow{ background: linear-gradient(180deg, rgba(255,255,0,.06), transparent 30%); }
+    .row-green{ background: linear-gradient(180deg, rgba(0,255,0,.06), transparent 30%); }
+
+    /* Toasts */
+    #toastContainer{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:9999}
+    .toast{min-width:240px; max-width:360px; padding:12px 14px; border-radius:10px; color:#0b111a; background:#d1fae5; border:1px solid #10b981; box-shadow:0 8px 26px rgba(0,0,0,.35); font-size:14px}
+    .toast.err{ background:#fee2e2; border-color:#ef4444; }
+    .toast .small{ display:block; font-size:12px; color:#111827; opacity:.7; margin-top:4px }
   </style>
 </head>
 <body>
 <header>
-  <h1>Inventaire Bébé <span class="pill">v1</span></h1>
-  <div class="sub">Charge un fichier Excel/CSV (onglets <b>Habits</b> et <b>Accessoires</b>), puis mets à jour les quantités et ajoute des lignes.</div>
+  <h1>Inventaire Bébé <span class="pill">v2 — Cloud</span></h1>
+  <div class="sub">Branches‑toi à Google Sheets (onglets <b>Habits</b> et <b>Accessoires</b>) avec une Web App Apps Script (<code>/exec</code>). Tout le monde peut éditer en ligne.</div>
 </header>
 
 <div class="wrap">
   <section class="card">
     <div class="hd">
       <div class="tabs" id="tabs"></div>
-      <div class="toolbar" style="max-width:620px">
-        <input type="file" id="fileInput" accept=".xls,.xlsx,.xlsm,.csv" />
-        <button id="btnExport" class="primary">Exporter l'onglet en CSV</button>
-        <button id="btnSaveCache">Sauvegarder le cache</button>
-        <button id="btnClearCache" class="danger">Vider le cache</button>
+      <div class="toolbar" style="max-width:760px">
+        <input id="backendUrl" placeholder="Colle ici l'URL Apps Script (se termine par /exec)">
+        <button id="btnTest" class="ghost">Tester</button>
+        <button id="btnLoadAll" class="primary">Charger les 2 onglets</button>
+        <button id="btnSave" >Enregistrer l’onglet courant</button>
+        <span id="status" class="note"></span>
       </div>
     </div>
     <div class="bd">
+
       <div class="toolbar" style="margin-bottom:12px">
         <input id="search" placeholder="Rechercher objet/taille/saison…" />
         <select id="filterSaison">
@@ -136,60 +145,51 @@
   </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
 <script>
 (function(){
   const COLS = ["Objet","Taille","Necessaire","Possedee","Saison"];
-  const CACHE_KEY = "inv_bebe_v1";
-
-  let dataBySheet = {}; // {sheetName: [{Objet, Taille, Necessaire, Possedee, Saison}]}
-  let current = "Habits";
-
+  const SHEETS = ["Habits","Accessoires"];
+  const LS_URL = "inv_bebe_cloud_url";
+  const LS_ACTIVE = "inv_bebe_cloud_active";
   const el = sel => document.querySelector(sel);
-  const esc = s => String(s??"").replace(/[&<>\"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
   const toInt = v => {
     if(v===null || v===undefined || v==="") return 0;
     const n = parseInt(String(v).replace(/[^0-9\\-]/g,""),10);
     return isFinite(n) ? n : 0;
   };
+  const esc = s => String(s??"").replace(/[&<>\"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 
-  function headerMap(h){
-    const x = String(h).trim().toLowerCase();
-    if(/objet|article|item/.test(x)) return "Objet";
-    if(/taille|size/.test(x)) return "Taille";
-    if(/nécess|necess|besoin|required/.test(x)) return "Necessaire";
-    if(/poss|have|stock/.test(x)) return "Possedee";
-    if(/saison|season/.test(x)) return "Saison";
-    return null;
-  }
+  let backendURL = "";
+  let current = "Habits";
+  let data = { "Habits": [], "Accessoires": [] };
 
-  function normalizeRows(rows){
-    if(!rows || !rows.length) return [];
-    // rows are arrays (header:1)
-    const hdr = rows[0].map(headerMap);
-    const out = [];
-    for(let i=1;i<rows.length;i++){
-      const row = rows[i]; if(!row) continue;
-      const o = {Objet:"",Taille:"",Necessaire:0,Possedee:0,Saison:""};
-      row.forEach((cell,idx)=>{
-        const key = hdr[idx];
-        if(!key) return;
-        if(key==="Necessaire" || key==="Possedee") o[key] = toInt(cell);
-        else o[key] = (cell??"").toString().trim();
-      });
-      if(o.Objet || o.Taille || o.Saison) out.push(o);
+  // Toasts
+  function toast(msg, ok=true, small=""){
+    const cont = el("#toastContainer");
+    const t = document.createElement("div");
+    t.className = "toast" + (ok ? "" : " err");
+    t.textContent = msg;
+    if (small){
+      const span = document.createElement("span");
+      span.className = "small";
+      span.textContent = small;
+      t.appendChild(span);
     }
-    return out;
+    cont.appendChild(t);
+    setTimeout(()=> t.remove(), 3000);
   }
 
+  // Tabs
   function renderTabs(){
     const tabs = el("#tabs"); tabs.innerHTML = "";
-    const names = Object.keys(dataBySheet);
-    names.forEach(n=>{
+    SHEETS.forEach(sn=>{
       const b = document.createElement("button");
-      b.className = "tab" + (n===current? " active": "");
-      b.textContent = n;
-      b.onclick = () => { current = n; renderAll(); };
+      b.className = "tab" + (sn===current? " active": "");
+      b.textContent = sn;
+      b.onclick = ()=>{ current = sn; renderAll(); localStorage.setItem(LS_ACTIVE, sn); };
       tabs.appendChild(b);
     });
   }
@@ -197,8 +197,8 @@
   function colorClass(nec, pos){
     nec = toInt(nec); pos = toInt(pos);
     if(nec <= 0){
-      if(pos>0) return "row-green"; // no need but some stock
-      return ""; // neutral
+      if(pos>0) return "row-green";
+      return "";
     }
     if(pos <= 0) return "row-red";
     if(pos < nec) return "row-yellow";
@@ -210,8 +210,7 @@
     const q = el("#search").value.trim().toLowerCase();
     const saison = el("#filterSaison").value;
     const tri = el("#triBy").value;
-
-    let rows = (dataBySheet[current]||[]).slice();
+    let rows = (data[current]||[]).slice();
 
     if(q){
       rows = rows.filter(r =>
@@ -235,7 +234,7 @@
       const tr = document.createElement("tr");
       tr.className = colorClass(r.Necessaire, r.Possedee);
       tr.innerHTML = `
-        <td class="muted">${idx+1}</td>
+        <td class="note">${idx+1}</td>
         <td contenteditable="true" data-k="Objet">${esc(r.Objet)}</td>
         <td contenteditable="true" data-k="Taille">${esc(r.Taille)}</td>
         <td class="right"><input type="number" min="0" step="1" value="${esc(r.Necessaire)}" data-k="Necessaire" style="width:90px;text-align:right"></td>
@@ -255,13 +254,11 @@
         </td>
       `;
 
-      // events
       tr.querySelectorAll("[contenteditable]").forEach(cell=>{
         cell.addEventListener("blur", e=>{
           const k = cell.dataset.k;
           r[k] = cell.textContent.trim();
           tr.className = colorClass(r.Necessaire, r.Possedee);
-          saveCacheSilent();
           renderChips();
         });
       });
@@ -270,26 +267,15 @@
           const k = inp.dataset.k;
           r[k] = toInt(inp.value);
           tr.className = colorClass(r.Necessaire, r.Possedee);
-          saveCacheSilent();
           renderChips();
         });
       });
-      tr.querySelector('[data-act="inc"]').addEventListener("click", ()=>{
-        r.Possedee = toInt(r.Possedee)+1;
-        renderTable(); saveCacheSilent();
-      });
-      tr.querySelector('[data-act="dec"]').addEventListener("click", ()=>{
-        r.Possedee = Math.max(0, toInt(r.Possedee)-1);
-        renderTable(); saveCacheSilent();
-      });
-      tr.querySelector('[data-act="dup"]').addEventListener("click", ()=>{
-        (dataBySheet[current]||[]).push({...r});
-        renderAll(); saveCacheSilent();
-      });
+      tr.querySelector('[data-act="inc"]').addEventListener("click", ()=>{ r.Possedee = toInt(r.Possedee)+1; renderTable(); });
+      tr.querySelector('[data-act="dec"]').addEventListener("click", ()=>{ r.Possedee = Math.max(0, toInt(r.Possedee)-1); renderTable(); });
+      tr.querySelector('[data-act="dup"]').addEventListener("click", ()=>{ (data[current]||[]).push({...r}); renderAll(); });
       tr.querySelector('[data-act="del"]').addEventListener("click", ()=>{
-        const arr = (dataBySheet[current]||[]);
-        const realIdx = arr.indexOf(r);
-        if(realIdx>-1){ arr.splice(realIdx,1); renderAll(); saveCacheSilent(); }
+        const arr = data[current]||[]; const realIdx = arr.indexOf(r);
+        if(realIdx>-1){ arr.splice(realIdx,1); renderAll(); }
       });
 
       tb.appendChild(tr);
@@ -298,7 +284,7 @@
 
   function renderChips(){
     const box = el("#chips"); box.innerHTML = "";
-    const arr = dataBySheet[current]||[];
+    const arr = data[current]||[];
     const totalLignes = arr.length;
     const totalNec = arr.reduce((s,r)=> s+toInt(r.Necessaire), 0);
     const totalPos = arr.reduce((s,r)=> s+toInt(r.Possedee), 0);
@@ -318,11 +304,107 @@
     add("À zéro", zero);
   }
 
-  function renderAll(){
-    renderTabs();
-    renderTable();
-    renderChips();
+  function renderAll(){ renderTabs(); renderTable(); renderChips(); }
+
+  // Backend URL handling
+  function setStatus(msg, err=false){ const s=el("#status"); s.textContent=msg; s.style.color=err?"#ffb4b4":"#9aa4b2"; }
+  function getURL(){ return el("#backendUrl").value.trim(); }
+  function saveURL(u){ localStorage.setItem(LS_URL, u); }
+
+  el("#backendUrl").value = localStorage.getItem(LS_URL) || "";
+  backendURL = getURL();
+  el("#backendUrl").addEventListener("change", ()=>{ backendURL=getURL(); saveURL(backendURL); });
+
+  // Cloud I/O
+  async function loadSheet(name){
+    if(!backendURL){ throw new Error("URL backend manquante"); }
+    const url = backendURL + "?sheet=" + encodeURIComponent(name);
+    const res = await fetch(url, {method:"GET", cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const js = await res.json();
+    if(!js.rows || !Array.isArray(js.rows)) throw new Error("Réponse invalide");
+    // Normalise clés et nombres
+    data[name] = js.rows.map(r=>({
+      Objet: (r.Objet??r.objet??r.Article??"").toString(),
+      Taille: (r.Taille??r.taille??r.Size??"").toString(),
+      Necessaire: toInt(r["Qté nécessaire"] ?? r.Necessaire ?? r["Nécessaire"] ?? r.Required),
+      Possedee: toInt(r["Qté possédée"] ?? r.Possedee ?? r["Possédée"] ?? r.Have ?? r.Stock),
+      Saison: (r.Saison??r.season??"").toString()
+    }));
   }
+  async function saveSheet(name){
+    if(!backendURL){ throw new Error("URL backend manquante"); }
+    const rows = (data[name]||[]).map(r=>({
+      "Objet": r.Objet||"",
+      "Taille": r.Taille||"",
+      "Qté nécessaire": toInt(r.Necessaire),
+      "Qté possédée": toInt(r.Possedee),
+      "Saison": r.Saison||""
+    }));
+    const payload = { sheet: name, rows };
+    const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
+    const res = await fetch(backendURL, {
+      method:"POST",
+      headers: { "Content-Type":"application/x-www-form-urlencoded;charset=utf-8" },
+      body
+    });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const js = await res.json().catch(()=>({ok:true}));
+    if(js.ok === false) throw new Error(js.error || "Réponse invalide");
+  }
+
+  // Buttons
+  el("#btnTest").addEventListener("click", async ()=>{
+    try{
+      backendURL = getURL(); if(!backendURL) throw new Error("Colle l’URL /exec d’abord");
+      saveURL(backendURL);
+      setStatus("Test…");
+      const ping = await fetch(backendURL+"?sheet="+encodeURIComponent(SHEETS[0]),{cache:"no-store"});
+      if(!ping.ok) throw new Error("HTTP " + ping.status);
+      const js = await ping.json();
+      if(!js.rows) throw new Error("Réponse non JSON ou invalide");
+      setStatus("URL valide ✅");
+      toast("Backend OK ✅");
+    }catch(e){
+      setStatus("Échec du test : "+ (e.message||e), true);
+      toast("URL invalide ❌", false, e.message||String(e));
+    }
+  });
+
+  el("#btnLoadAll").addEventListener("click", async ()=>{
+    const btn = el("#btnLoadAll"); btn.disabled = true; setStatus("Chargement…");
+    try{
+      backendURL = getURL(); if(!backendURL) throw new Error("Colle l’URL /exec d’abord");
+      saveURL(backendURL);
+      await loadSheet("Habits");
+      await loadSheet("Accessoires");
+      current = localStorage.getItem(LS_ACTIVE) || "Habits";
+      renderAll();
+      setStatus("Chargé ✅");
+      toast("Données chargées ✅");
+    }catch(e){
+      setStatus("Erreur : " + (e.message||e), true);
+      toast("Échec du chargement ❌", false, e.message||String(e));
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  el("#btnSave").addEventListener("click", async ()=>{
+    const btn = el("#btnSave"); btn.disabled = true; const old = btn.textContent; btn.textContent="Enregistrement…"; setStatus("Enregistrement…");
+    try{
+      await saveSheet(current);
+      setStatus("Enregistré ✅");
+      toast("Enregistrement réussi ✅");
+      // Optionnel: recharger pour refléter formules/tri côté Sheet
+      // await loadSheet(current); renderAll();
+    }catch(e){
+      setStatus("Erreur : " + (e.message||e), true);
+      toast("Échec de l'enregistrement ❌", false, e.message||String(e));
+    }finally{
+      btn.textContent = old; btn.disabled = false;
+    }
+  });
 
   // Add row
   el("#btnAdd").addEventListener("click", ()=>{
@@ -332,9 +414,9 @@
     const p = toInt(el("#newPossedee").value);
     const s = el("#newSaison").value.trim();
     if(!o && !t && !s) return;
-    (dataBySheet[current]||[]).push({Objet:o, Taille:t, Necessaire:n, Possedee:p, Saison:s});
+    (data[current]||[]).push({Objet:o, Taille:t, Necessaire:n, Possedee:p, Saison:s});
     el("#newObjet").value=""; el("#newTaille").value=""; el("#newNecessaire").value=""; el("#newPossedee").value=""; el("#newSaison").value="";
-    renderAll(); saveCacheSilent();
+    renderAll();
   });
 
   // Filters
@@ -342,92 +424,57 @@
   el("#filterSaison").addEventListener("change", renderTable);
   el("#triBy").addEventListener("change", renderTable);
 
-  // Export CSV for current tab
-  el("#btnExport").addEventListener("click", ()=>{
-    const rows = dataBySheet[current]||[];
-    const headers = ["Objet","Taille","Qté nécessaire","Qté possédée","Saison"];
-    const csv = [headers.join(",")].concat(
-      rows.map(r => [r.Objet, r.Taille, toInt(r.Necessaire), toInt(r.Possedee), r.Saison]
-        .map(v=> `"${String(v??"").replace(/"/g,'""')}"`).join(","))
-    ).join("\\n");
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `inventaire_${current}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-
-  // Cache
-  function saveCacheSilent(){
-    try{
-      const payload = {dataBySheet, current};
-      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
-    }catch(e){}
-  }
-  el("#btnSaveCache").addEventListener("click", ()=>{
-    saveCacheSilent();
-    alert("Cache local sauvegardé ✅");
-  });
-  el("#btnClearCache").addEventListener("click", ()=>{
-    if(confirm("Vider le cache local ?")){
-      localStorage.removeItem(CACHE_KEY);
-      alert("Cache vidé.");
-    }
-  });
-
-  (function loadCache(){
-    try{
-      const s = localStorage.getItem(CACHE_KEY);
-      if(!s) return;
-      const obj = JSON.parse(s);
-      if(obj && obj.dataBySheet){
-        dataBySheet = obj.dataBySheet;
-        current = obj.current || Object.keys(dataBySheet)[0] || "Habits";
-        renderAll();
-      }
-    }catch(e){}
-  })();
-
-  // File load
-  el("#fileInput").addEventListener("change", async (ev)=>{
-    const file = ev.target.files[0]; if(!file) return;
-    const name = file.name.toLowerCase();
-    try{
-      if(name.endsWith(".csv")){
-        const txt = await file.text();
-        const rows = txt.split(/\r?\n/).map(l => l.split(",").map(s => s.replace(/^"|"$/g,"").replace(/""/g,'"')));
-        // CSV → on remplit juste "Habits"
-        dataBySheet = { "Habits": normalizeRows(rows) };
-      } else {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf, {type:"array"});
-        dataBySheet = {};
-        const names = wb.SheetNames;
-        names.forEach(sn => {
-          const sheet = wb.Sheets[sn];
-          const arr = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""}); // as arrays
-          const rows = normalizeRows(arr);
-          dataBySheet[sn] = rows;
-        });
-        const keys = Object.keys(dataBySheet);
-        current = keys.includes("Habits") ? "Habits" : (keys[0]||"Habits");
-      }
-      renderAll();
-      saveCacheSilent();
-    } catch(err){
-      console.error(err);
-      alert("Échec de lecture du fichier : " + err.message);
-    }
-  });
-
-  // Initial empty state
-  if(Object.keys(dataBySheet).length===0){
-    dataBySheet = { "Habits": [], "Accessoires": [] };
-    current = "Habits";
-    renderAll();
-  }
+  // Init
+  current = localStorage.getItem(LS_ACTIVE) || "Habits";
+  renderAll();
 })();
 </script>
+
+<!-- ======== Apps Script (à coller dans Code.gs) ========
+function doGet(e) {
+  const name = (e.parameter && e.parameter.sheet) || "Habits";
+  const sheet = SpreadsheetApp.getActive().getSheetByName(name);
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false, error:"Sheet introuvable: "+name}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  const values = sheet.getDataRange().getValues();
+  const headers = values.shift();
+  const rows = values
+    .filter(r => r.some(v => v !== ""))
+    .map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]])));
+  return ContentService.createTextOutput(JSON.stringify({rows}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const raw = (e && e.parameter && e.parameter.payload) ||
+                (e && e.postData && e.postData.contents) || '{}';
+    const body = JSON.parse(raw);
+    const name = body.sheet || "Habits";
+    const sheet = SpreadsheetApp.getActive().getSheetByName(name);
+    if (!sheet) throw new Error("Sheet introuvable: "+name);
+    const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+
+    // Efface le contenu existant (sauf entête)
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) sheet.getRange(2, 1, lastRow-1, headers.length).clearContent();
+
+    // Réécrit si on a des lignes
+    if (Array.isArray(body.rows) && body.rows.length) {
+      const matrix = body.rows.map(obj => headers.map(h => obj[h] ?? ""));
+      sheet.getRange(2, 1, matrix.length, headers.length).setValues(matrix);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false, error:String(err)}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+// Déployer en Application web : Exécuter en tant que "Moi", Accès "Toute personne disposant du lien"
+=========================================================== -->
 </body>
 </html>
