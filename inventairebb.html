@@ -1,480 +1,148 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Inventaire Bébé — v2 (Cloud Sheets)</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-  <style>
-    :root{
-      --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff;
-      --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%);
-    }
-    header{padding:20px; position:sticky; top:0; z-index:20;
-      background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.5) 60%, rgba(15,18,24,0)); backdrop-filter: blur(6px);}
-    h1{margin:0 0 6px; font-size:22px}
-    .sub{color:var(--muted); font-size:13px}
-    .wrap{padding:14px 20px 28px; display:grid; gap:16px}
-    .card{background:var(--card); border-radius:var(--br); border:1px solid #232a36; box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset}
-    .card > .hd{padding:12px 14px; border-bottom:1px solid #232a36; font-weight:600; display:flex; align-items:center; gap:10px; justify-content:space-between;}
-    .card > .bd{padding:14px 14px}
-    .toolbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .toolbar > *{flex:1 0 auto}
-    input, select, button{ width:100%; padding:10px 12px; background:#0f131a; color:var(--text);
-      border:1px solid #2a3241; border-radius:10px; outline:none; font-size:14px; }
-    button{cursor:pointer; background:linear-gradient(180deg,#233146,#172232); border-color:#2f3a4d}
-    button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
-    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
-    button.small{padding:6px 10px; font-size:12px}
-    button[disabled]{opacity:.6; cursor:not-allowed}
-    .tabs{display:flex; gap:6px; flex-wrap:wrap}
-    .tab{padding:8px 12px; border-radius:999px; border:1px solid #2a3241; background:#0f131a; color:#cfd7e3; cursor:pointer}
-    .tab.active{border-color:#4a6aa0; background:#1a2232; color:#e7edf3}
-    table{width:100%; border-collapse:collapse; font-size:13px}
-    th, td{padding:8px 10px; border-bottom:1px solid #232a36; vertical-align:middle}
-    th{position:sticky; top:0; background:#151a23; z-index:5}
-    tr:hover td{background:#121826}
-    .qtycell{display:flex; gap:6px; align-items:center}
-    .qtycell input{width:72px; text-align:center}
-    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
-    .note{color:var(--muted); font-size:12px}
-    .chips{display:flex; gap:8px; flex-wrap:wrap}
-    .chip{padding:6px 10px; border:1px solid #273245; border-radius:999px; background:#0f1722; font-size:13px}
-    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
-    .right{ text-align:right }
-    .nowrap{ white-space:nowrap }
-    .row-red{ background: linear-gradient(180deg, rgba(255,0,0,.06), transparent 30%); }
-    .row-yellow{ background: linear-gradient(180deg, rgba(255,255,0,.06), transparent 30%); }
-    .row-green{ background: linear-gradient(180deg, rgba(0,255,0,.06), transparent 30%); }
-
-    /* Toasts */
-    #toastContainer{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:10px; z-index:9999}
-    .toast{min-width:240px; max-width:360px; padding:12px 14px; border-radius:10px; color:#0b111a; background:#d1fae5; border:1px solid #10b981; box-shadow:0 8px 26px rgba(0,0,0,.35); font-size:14px}
-    .toast.err{ background:#fee2e2; border-color:#ef4444; }
-    .toast .small{ display:block; font-size:12px; color:#111827; opacity:.7; margin-top:4px }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventaire Bébé v2.2</title>
+<style>
+body{font-family:Arial, sans-serif;background:#f4f4f4;margin:0;padding:0}
+header{background:#333;color:#fff;padding:10px 20px}
+h1{margin:0;font-size:20px}
+.container{padding:20px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:8px;text-align:left}
+tr.red{background:#ffcccc}
+tr.yellow{background:#fff6cc}
+tr.green{background:#ccffcc}
+button{padding:6px 10px;margin:4px;cursor:pointer}
+#toast{position:fixed;bottom:20px;right:20px;background:#4caf50;color:#fff;padding:10px;border-radius:4px;display:none}
+.modal{display:none;position:fixed;z-index:10;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.4)}
+.modal-content{background:#fff;margin:10% auto;padding:20px;border:1px solid #888;width:300px;border-radius:6px}
+.close{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer}
+</style>
 </head>
 <body>
 <header>
-  <h1>Inventaire Bébé <span class="pill">v2 — Cloud</span></h1>
-  <div class="sub">Branches‑toi à Google Sheets (onglets <b>Habits</b> et <b>Accessoires</b>) avec une Web App Apps Script (<code>/exec</code>). Tout le monde peut éditer en ligne.</div>
+<h1>Inventaire Bébé</h1>
 </header>
-
-<div class="wrap">
-  <section class="card">
-    <div class="hd">
-      <div class="tabs" id="tabs"></div>
-      <div class="toolbar" style="max-width:760px">
-        <input id="backendUrl" placeholder="Colle ici l'URL Apps Script (se termine par /exec)">
-        <button id="btnTest" class="ghost">Tester</button>
-        <button id="btnLoadAll" class="primary">Charger les 2 onglets</button>
-        <button id="btnSave" >Enregistrer l’onglet courant</button>
-        <span id="status" class="note"></span>
-      </div>
-    </div>
-    <div class="bd">
-
-      <div class="toolbar" style="margin-bottom:12px">
-        <input id="search" placeholder="Rechercher objet/taille/saison…" />
-        <select id="filterSaison">
-          <option value="">Saison (toutes)</option>
-          <option>Hiver</option><option>Printemps</option><option>Été</option><option>Automne</option>
-        </select>
-        <select id="triBy">
-          <option value="">Tri (aucun)</option>
-          <option value="Objet">Objet</option>
-          <option value="Taille">Taille</option>
-          <option value="Necessaire">Qté nécessaire</option>
-          <option value="Possedee">Qté possédée</option>
-          <option value="Saison">Saison</option>
-        </select>
-        <div class="right nowrap" style="flex:0 0 auto">
-          <span class="note">Couleurs : 0 = rouge • partiel = jaune • OK/plus = vert</span>
-        </div>
-      </div>
-
-      <div style="overflow:auto; max-height:52vh; border:1px solid #232a36; border-radius:12px">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th style="width:32px">#</th>
-              <th>Objet</th>
-              <th>Taille</th>
-              <th class="right">Qté nécessaire</th>
-              <th class="right">Qté possédée</th>
-              <th>Saison</th>
-              <th style="width:130px">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:14px">
-        <div class="grid2">
-          <div>
-            <h3 style="margin:0 0 8px">Ajouter une ligne</h3>
-            <div class="grid2" style="grid-template-columns: 1.5fr 1fr">
-              <input id="newObjet" placeholder="Objet" />
-              <input id="newTaille" placeholder="Taille" />
-            </div>
-            <div class="grid2" style="margin-top:8px">
-              <input id="newNecessaire" type="number" min="0" step="1" placeholder="Qté nécessaire" />
-              <input id="newPossedee" type="number" min="0" step="1" placeholder="Qté possédée" />
-            </div>
-            <div class="grid2" style="margin-top:8px">
-              <input id="newSaison" placeholder="Saison (ex: Hiver)" />
-              <button id="btnAdd" class="primary">Ajouter</button>
-            </div>
-          </div>
-          <div>
-            <h3 style="margin:0 0 8px">Stats rapides</h3>
-            <div class="chips" id="chips"></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
+<div class="container">
+<div id="tabs"></div>
+<button id="addBtn">➕ Ajouter dans cet onglet</button>
+<div id="tableContainer"></div>
 </div>
 
-<!-- Toast container -->
-<div id="toastContainer"></div>
+<div id="addModal" class="modal">
+<div class="modal-content">
+<span class="close" id="closeModal">&times;</span>
+<h3>Ajouter dans <span id="modalSheet"></span></h3>
+<label>Objet:</label>
+<select id="objSelect"></select><br>
+ou nouveau: <input id="newObj"><br>
+<label>Taille:</label>
+<select id="tailleSelect"></select><br>
+ou nouvelle: <input id="newTaille"><br>
+<label>Quantité à ajouter:</label>
+<input type="number" id="addQty" min="1" value="1"><br><br>
+<button id="confirmAdd">Valider</button>
+</div>
+</div>
+
+<div id="toast"></div>
 
 <script>
-(function(){
-  const COLS = ["Objet","Taille","Necessaire","Possedee","Saison"];
-  const SHEETS = ["Habits","Accessoires"];
-  const LS_URL = "inv_bebe_cloud_url";
-  const LS_ACTIVE = "inv_bebe_cloud_active";
-  const el = sel => document.querySelector(sel);
-  const toInt = v => {
-    if(v===null || v===undefined || v==="") return 0;
-    const n = parseInt(String(v).replace(/[^0-9\\-]/g,""),10);
-    return isFinite(n) ? n : 0;
-  };
-  const esc = s => String(s??"").replace(/[&<>\"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+const execUrl = "https://script.google.com/macros/s/AKfycbwLChjg9xy9xjzUkzHMlvhtyPW-EJ9VujnMIZxOsCXZcsGqq_ZXvVkbJcPK7uPleiZh1g/exec";
+let data = {}, currentSheet = "Habits";
 
-  let backendURL = "";
-  let current = "Habits";
-  let data = { "Habits": [], "Accessoires": [] };
+function showToast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.style.background = ok ? '#4caf50' : '#f44336';
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=>t.style.display='none',3000);
+}
 
-  // Toasts
-  function toast(msg, ok=true, small=""){
-    const cont = el("#toastContainer");
-    const t = document.createElement("div");
-    t.className = "toast" + (ok ? "" : " err");
-    t.textContent = msg;
-    if (small){
-      const span = document.createElement("span");
-      span.className = "small";
-      span.textContent = small;
-      t.appendChild(span);
-    }
-    cont.appendChild(t);
-    setTimeout(()=> t.remove(), 3000);
-  }
+function colorClass(nec, pos){
+  nec = parseInt(nec)||0; pos = parseInt(pos)||0;
+  if(nec>0 && pos==0) return 'red';
+  if(nec>0 && pos<nec) return 'yellow';
+  if(nec>0 && pos>=nec) return 'green';
+  return '';
+}
 
-  // Tabs
-  function renderTabs(){
-    const tabs = el("#tabs"); tabs.innerHTML = "";
-    SHEETS.forEach(sn=>{
-      const b = document.createElement("button");
-      b.className = "tab" + (sn===current? " active": "");
-      b.textContent = sn;
-      b.onclick = ()=>{ current = sn; renderAll(); localStorage.setItem(LS_ACTIVE, sn); };
-      tabs.appendChild(b);
-    });
-  }
-
-  function colorClass(nec, pos){
-    nec = toInt(nec); pos = toInt(pos);
-    if(nec <= 0){
-      if(pos>0) return "row-green";
-      return "";
-    }
-    if(pos <= 0) return "row-red";
-    if(pos < nec) return "row-yellow";
-    return "row-green";
-  }
-
-  function renderTable(){
-    const tb = el("#tbl tbody"); tb.innerHTML = "";
-    const q = el("#search").value.trim().toLowerCase();
-    const saison = el("#filterSaison").value;
-    const tri = el("#triBy").value;
-    let rows = (data[current]||[]).slice();
-
-    if(q){
-      rows = rows.filter(r =>
-        (r.Objet||"").toLowerCase().includes(q) ||
-        (r.Taille||"").toLowerCase().includes(q) ||
-        (r.Saison||"").toLowerCase().includes(q)
-      );
-    }
-    if(saison){
-      rows = rows.filter(r => (r.Saison||"").toLowerCase().includes(saison.toLowerCase()));
-    }
-    if(tri){
-      rows.sort((a,b)=>{
-        const A = a[tri], B = b[tri];
-        if(tri==="Necessaire"||tri==="Possedee") return toInt(A)-toInt(B);
-        return String(A??"").localeCompare(String(B??""), "fr");
-      });
-    }
-
-    rows.forEach((r, idx)=>{
-      const tr = document.createElement("tr");
-      tr.className = colorClass(r.Necessaire, r.Possedee);
-      tr.innerHTML = `
-        <td class="note">${idx+1}</td>
-        <td contenteditable="true" data-k="Objet">${esc(r.Objet)}</td>
-        <td contenteditable="true" data-k="Taille">${esc(r.Taille)}</td>
-        <td class="right"><input type="number" min="0" step="1" value="${esc(r.Necessaire)}" data-k="Necessaire" style="width:90px;text-align:right"></td>
-        <td class="right">
-          <div class="qtycell">
-            <button class="small" data-act="dec">−</button>
-            <input type="number" min="0" step="1" value="${esc(r.Possedee)}" data-k="Possedee">
-            <button class="small" data-act="inc">+</button>
-          </div>
-        </td>
-        <td contenteditable="true" data-k="Saison">${esc(r.Saison)}</td>
-        <td>
-          <div style="display:flex; gap:6px">
-            <button class="small" data-act="dup">Dupliquer</button>
-            <button class="small danger" data-act="del">Supprimer</button>
-          </div>
-        </td>
-      `;
-
-      tr.querySelectorAll("[contenteditable]").forEach(cell=>{
-        cell.addEventListener("blur", e=>{
-          const k = cell.dataset.k;
-          r[k] = cell.textContent.trim();
-          tr.className = colorClass(r.Necessaire, r.Possedee);
-          renderChips();
-        });
-      });
-      tr.querySelectorAll('input[type="number"]').forEach(inp=>{
-        inp.addEventListener("input", e=>{
-          const k = inp.dataset.k;
-          r[k] = toInt(inp.value);
-          tr.className = colorClass(r.Necessaire, r.Possedee);
-          renderChips();
-        });
-      });
-      tr.querySelector('[data-act="inc"]').addEventListener("click", ()=>{ r.Possedee = toInt(r.Possedee)+1; renderTable(); });
-      tr.querySelector('[data-act="dec"]').addEventListener("click", ()=>{ r.Possedee = Math.max(0, toInt(r.Possedee)-1); renderTable(); });
-      tr.querySelector('[data-act="dup"]').addEventListener("click", ()=>{ (data[current]||[]).push({...r}); renderAll(); });
-      tr.querySelector('[data-act="del"]').addEventListener("click", ()=>{
-        const arr = data[current]||[]; const realIdx = arr.indexOf(r);
-        if(realIdx>-1){ arr.splice(realIdx,1); renderAll(); }
-      });
-
-      tb.appendChild(tr);
-    });
-  }
-
-  function renderChips(){
-    const box = el("#chips"); box.innerHTML = "";
-    const arr = data[current]||[];
-    const totalLignes = arr.length;
-    const totalNec = arr.reduce((s,r)=> s+toInt(r.Necessaire), 0);
-    const totalPos = arr.reduce((s,r)=> s+toInt(r.Possedee), 0);
-    const ok = arr.filter(r=> toInt(r.Possedee) >= toInt(r.Necessaire) && toInt(r.Necessaire)>0).length;
-    const part = arr.filter(r=> toInt(r.Possedee) > 0 && toInt(r.Possedee) < toInt(r.Necessaire)).length;
-    const zero = arr.filter(r=> toInt(r.Possedee) === 0 && toInt(r.Necessaire)>0).length;
-
-    const add = (label, val) => {
-      const chip = document.createElement("span"); chip.className="chip";
-      chip.textContent = `${label}: ${val}`; box.appendChild(chip);
-    };
-    add("Lignes", totalLignes);
-    add("Qté nécessaire (Σ)", totalNec);
-    add("Qté possédée (Σ)", totalPos);
-    add("OK", ok);
-    add("Partiel", part);
-    add("À zéro", zero);
-  }
-
-  function renderAll(){ renderTabs(); renderTable(); renderChips(); }
-
-  // Backend URL handling
-  function setStatus(msg, err=false){ const s=el("#status"); s.textContent=msg; s.style.color=err?"#ffb4b4":"#9aa4b2"; }
-  function getURL(){ return el("#backendUrl").value.trim(); }
-  function saveURL(u){ localStorage.setItem(LS_URL, u); }
-
-  el("#backendUrl").value = localStorage.getItem(LS_URL) || "";
-  backendURL = getURL();
-  el("#backendUrl").addEventListener("change", ()=>{ backendURL=getURL(); saveURL(backendURL); });
-
-  // Cloud I/O
-  async function loadSheet(name){
-    if(!backendURL){ throw new Error("URL backend manquante"); }
-    const url = backendURL + "?sheet=" + encodeURIComponent(name);
-    const res = await fetch(url, {method:"GET", cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP " + res.status);
-    const js = await res.json();
-    if(!js.rows || !Array.isArray(js.rows)) throw new Error("Réponse invalide");
-    // Normalise clés et nombres
-    data[name] = js.rows.map(r=>({
-      Objet: (r.Objet??r.objet??r.Article??"").toString(),
-      Taille: (r.Taille??r.taille??r.Size??"").toString(),
-      Necessaire: toInt(r["Qté nécessaire"] ?? r.Necessaire ?? r["Nécessaire"] ?? r.Required),
-      Possedee: toInt(r["Qté possédée"] ?? r.Possedee ?? r["Possédée"] ?? r.Have ?? r.Stock),
-      Saison: (r.Saison??r.season??"").toString()
-    }));
-  }
-  async function saveSheet(name){
-    if(!backendURL){ throw new Error("URL backend manquante"); }
-    const rows = (data[name]||[]).map(r=>({
-      "Objet": r.Objet||"",
-      "Taille": r.Taille||"",
-      "Qté nécessaire": toInt(r.Necessaire),
-      "Qté possédée": toInt(r.Possedee),
-      "Saison": r.Saison||""
-    }));
-    const payload = { sheet: name, rows };
-    const body = new URLSearchParams({ payload: JSON.stringify(payload) }).toString();
-    const res = await fetch(backendURL, {
-      method:"POST",
-      headers: { "Content-Type":"application/x-www-form-urlencoded;charset=utf-8" },
-      body
-    });
-    if(!res.ok) throw new Error("HTTP " + res.status);
-    const js = await res.json().catch(()=>({ok:true}));
-    if(js.ok === false) throw new Error(js.error || "Réponse invalide");
-  }
-
-  // Buttons
-  el("#btnTest").addEventListener("click", async ()=>{
-    try{
-      backendURL = getURL(); if(!backendURL) throw new Error("Colle l’URL /exec d’abord");
-      saveURL(backendURL);
-      setStatus("Test…");
-      const ping = await fetch(backendURL+"?sheet="+encodeURIComponent(SHEETS[0]),{cache:"no-store"});
-      if(!ping.ok) throw new Error("HTTP " + ping.status);
-      const js = await ping.json();
-      if(!js.rows) throw new Error("Réponse non JSON ou invalide");
-      setStatus("URL valide ✅");
-      toast("Backend OK ✅");
-    }catch(e){
-      setStatus("Échec du test : "+ (e.message||e), true);
-      toast("URL invalide ❌", false, e.message||String(e));
-    }
+function renderTabs(){
+  const tabsDiv = document.getElementById('tabs');
+  tabsDiv.innerHTML = '';
+  ['Habits','Accessoires'].forEach(name=>{
+    const b = document.createElement('button');
+    b.textContent = name;
+    if(name===currentSheet) b.style.fontWeight='bold';
+    b.onclick=()=>{currentSheet=name; renderTable();};
+    tabsDiv.appendChild(b);
   });
+}
 
-  el("#btnLoadAll").addEventListener("click", async ()=>{
-    const btn = el("#btnLoadAll"); btn.disabled = true; setStatus("Chargement…");
-    try{
-      backendURL = getURL(); if(!backendURL) throw new Error("Colle l’URL /exec d’abord");
-      saveURL(backendURL);
-      await loadSheet("Habits");
-      await loadSheet("Accessoires");
-      current = localStorage.getItem(LS_ACTIVE) || "Habits";
-      renderAll();
-      setStatus("Chargé ✅");
-      toast("Données chargées ✅");
-    }catch(e){
-      setStatus("Erreur : " + (e.message||e), true);
-      toast("Échec du chargement ❌", false, e.message||String(e));
-    }finally{
-      btn.disabled = false;
-    }
+function renderTable(){
+  const cont = document.getElementById('tableContainer');
+  const rows = data[currentSheet] || [];
+  let html = '<table><tr><th>Objet</th><th>Taille</th><th>Qté nécessaire</th><th>Qté possédée</th><th>Saison</th></tr>';
+  rows.forEach(r=>{
+    html += `<tr class="${colorClass(r['Qté nécessaire'], r['Qté possédée'])}">
+      <td>${r.Objet||''}</td>
+      <td>${r.Taille||''}</td>
+      <td>${r['Qté nécessaire']}</td>
+      <td>${r['Qté possédée']}</td>
+      <td>${r.Saison||''}</td>
+    </tr>`;
   });
+  html += '</table>';
+  cont.innerHTML = html;
+}
 
-  el("#btnSave").addEventListener("click", async ()=>{
-    const btn = el("#btnSave"); btn.disabled = true; const old = btn.textContent; btn.textContent="Enregistrement…"; setStatus("Enregistrement…");
-    try{
-      await saveSheet(current);
-      setStatus("Enregistré ✅");
-      toast("Enregistrement réussi ✅");
-      // Optionnel: recharger pour refléter formules/tri côté Sheet
-      // await loadSheet(current); renderAll();
-    }catch(e){
-      setStatus("Erreur : " + (e.message||e), true);
-      toast("Échec de l'enregistrement ❌", false, e.message||String(e));
-    }finally{
-      btn.textContent = old; btn.disabled = false;
-    }
-  });
+async function loadSheet(name){
+  const res = await fetch(execUrl+'?sheet='+encodeURIComponent(name));
+  const js = await res.json();
+  const rows = (js.rows||[]).filter(r=>(r.Objet||r.Taille||r.Saison));
+  data[name] = rows;
+}
 
-  // Add row
-  el("#btnAdd").addEventListener("click", ()=>{
-    const o = el("#newObjet").value.trim();
-    const t = el("#newTaille").value.trim();
-    const n = toInt(el("#newNecessaire").value);
-    const p = toInt(el("#newPossedee").value);
-    const s = el("#newSaison").value.trim();
-    if(!o && !t && !s) return;
-    (data[current]||[]).push({Objet:o, Taille:t, Necessaire:n, Possedee:p, Saison:s});
-    el("#newObjet").value=""; el("#newTaille").value=""; el("#newNecessaire").value=""; el("#newPossedee").value=""; el("#newSaison").value="";
-    renderAll();
-  });
+async function loadAll(){
+  await loadSheet('Habits');
+  await loadSheet('Accessoires');
+  renderTabs();
+  renderTable();
+}
 
-  // Filters
-  el("#search").addEventListener("input", renderTable);
-  el("#filterSaison").addEventListener("change", renderTable);
-  el("#triBy").addEventListener("change", renderTable);
+document.getElementById('addBtn').onclick=()=>{
+  const modal = document.getElementById('addModal');
+  document.getElementById('modalSheet').textContent = currentSheet;
+  const objs = [...new Set((data[currentSheet]||[]).map(r=>r.Objet).filter(Boolean))];
+  const objSel = document.getElementById('objSelect');
+  objSel.innerHTML = '<option value="">--</option>'+objs.map(o=>`<option>{o}</option>`).join('');
+  const tailles = [...new Set((data[currentSheet]||[]).map(r=>r.Taille).filter(Boolean))];
+  const tailleSel = document.getElementById('tailleSelect');
+  tailleSel.innerHTML = '<option value="">--</option>'+tailles.map(o=>`<option>{o}</option>`).join('');
+  modal.style.display='block';
+};
 
-  // Init
-  current = localStorage.getItem(LS_ACTIVE) || "Habits";
-  renderAll();
-})();
+document.getElementById('closeModal').onclick=()=>document.getElementById('addModal').style.display='none';
+
+document.getElementById('confirmAdd').onclick=async()=>{
+  const obj = document.getElementById('newObj').value || document.getElementById('objSelect').value;
+  const taille = document.getElementById('newTaille').value || document.getElementById('tailleSelect').value;
+  const qty = parseInt(document.getElementById('addQty').value)||0;
+  if(!obj || !taille || qty<=0){alert('Champs incomplets');return;}
+  let rows = data[currentSheet]||[];
+  let found = rows.find(r=>r.Objet===obj && r.Taille===taille);
+  if(found) found['Qté possédée'] = (parseInt(found['Qté possédée'])||0) + qty;
+  else rows.push({Objet:obj, Taille:taille, 'Qté nécessaire':0, 'Qté possédée':qty, Saison:''});
+  data[currentSheet]=rows;
+  await fetch(execUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'payload='+encodeURIComponent(JSON.stringify({sheet:currentSheet,rows:data[currentSheet]}))});
+  showToast('Ajout effectué ✅', true);
+  document.getElementById('addModal').style.display='none';
+  renderTable();
+};
+
+window.onload=loadAll;
 </script>
-
-<!-- ======== Apps Script (à coller dans Code.gs) ========
-function doGet(e) {
-  const name = (e.parameter && e.parameter.sheet) || "Habits";
-  const sheet = SpreadsheetApp.getActive().getSheetByName(name);
-  if (!sheet) {
-    return ContentService.createTextOutput(JSON.stringify({ok:false, error:"Sheet introuvable: "+name}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  const values = sheet.getDataRange().getValues();
-  const headers = values.shift();
-  const rows = values
-    .filter(r => r.some(v => v !== ""))
-    .map(r => Object.fromEntries(headers.map((h,i)=>[h, r[i]])));
-  return ContentService.createTextOutput(JSON.stringify({rows}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    const raw = (e && e.parameter && e.parameter.payload) ||
-                (e && e.postData && e.postData.contents) || '{}';
-    const body = JSON.parse(raw);
-    const name = body.sheet || "Habits";
-    const sheet = SpreadsheetApp.getActive().getSheetByName(name);
-    if (!sheet) throw new Error("Sheet introuvable: "+name);
-    const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
-
-    // Efface le contenu existant (sauf entête)
-    const lastRow = sheet.getLastRow();
-    if (lastRow > 1) sheet.getRange(2, 1, lastRow-1, headers.length).clearContent();
-
-    // Réécrit si on a des lignes
-    if (Array.isArray(body.rows) && body.rows.length) {
-      const matrix = body.rows.map(obj => headers.map(h => obj[h] ?? ""));
-      sheet.getRange(2, 1, matrix.length, headers.length).setValues(matrix);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify({ok:true}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ok:false, error:String(err)}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-// Déployer en Application web : Exécuter en tant que "Moi", Accès "Toute personne disposant du lien"
-=========================================================== -->
 </body>
 </html>
