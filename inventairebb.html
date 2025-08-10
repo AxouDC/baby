@@ -3,87 +3,191 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inventaire Bébé v2.3.2</title>
+<title>Inventaire de bébé — La maison Rose</title>
 <style>
-body{font-family:Arial, sans-serif;background:#f4f4f4;margin:0;padding:0}
-header{background:#333;color:#fff;padding:10px 20px}
-h1{margin:0;font-size:20px}
-.container{padding:20px}
-table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff}
-th,td{border:1px solid #ccc;padding:8px;text-align:left}
-tr.red{background:#ffcccc}
-tr.yellow{background:#fff6cc}
-tr.green{background:#ccffcc}
-button{padding:6px 10px;margin:4px;cursor:pointer}
-th.sortable{cursor:pointer;user-select:none}
-th.sortable .arrow{font-size:11px;margin-left:6px;color:#666}
-#toast{position:fixed;bottom:20px;right:20px;background:#4caf50;color:#fff;padding:10px;border-radius:4px;display:none}
-.modal{display:none;position:fixed;z-index:10;left:0;top:0;width:100%;height:100%;overflow:auto;background:rgba(0,0,0,0.4)}
-.modal-content{background:#fff;margin:10% auto;padding:20px;border:1px solid #888;width:340px;border-radius:6px}
-.close{color:#aaa;float:right;font-size:28px;font-weight:bold;cursor:pointer}
-label{display:block;margin:8px 0 4px}
-input[type="number"], input[type="text"], select{width:100%;padding:6px}
-#tabs button{margin-right:6px}
-.smallmuted{color:#666;font-size:12px}
+:root{
+  --bg:#fff7fa; --bg1:#fff1f6; --bg2:#ffeaf2;
+  --card:#ffffff; --text:#3a2a30; --muted:#7b5f6a; --border:#efd7e5;
+  --accent:#e470a2; --accent2:#f19ac0; --br:14px;
+  --shadow:0 14px 40px rgba(223,130,170,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  color:var(--text);
+  font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
+  background:
+    radial-gradient(1200px 800px at 10% -10%, var(--bg1) 0, rgba(255,255,255,0) 60%),
+    radial-gradient(1200px 800px at 110% -10%, var(--bg2) 0, rgba(255,255,255,0) 55%),
+    var(--bg);
+}
+header{
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:12px;
+  padding:14px 18px;
+  background:linear-gradient(180deg, rgba(255,247,250,.92), rgba(255,247,250,.7) 70%, rgba(255,247,250,0));
+  border-bottom:1px solid var(--border);
+  backdrop-filter: blur(6px);
+}
+h1{margin:0; font-size:20px}
+header .spacer{flex:1}
+a.btn-ghost{
+  text-decoration:none; color:var(--text);
+  padding:8px 12px; border-radius:10px; border:1px solid var(--border);
+  background: linear-gradient(180deg, #ffe9f3, #ffe2ee);
+  font-size:14px;
+}
+.container{max-width:1100px; margin:14px auto 28px; padding:0 16px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--br); box-shadow:var(--shadow)}
+.card .hd{padding:12px 14px; border-bottom:1px solid var(--border); font-weight:600; display:flex; align-items:center; justify-content:space-between}
+.card .bd{padding:14px 16px}
+.smallmuted{color:var(--muted); font-size:12px}
+#tabs{display:flex; gap:8px; flex-wrap:wrap}
+#tabs button, button{
+  padding:10px 12px; cursor:pointer; border-radius:10px; border:1px solid var(--border);
+  background:linear-gradient(180deg,#fff1f7,#ffe8f0); color:var(--text)
+}
+#addBtn{ border:1px solid var(--accent); background:linear-gradient(180deg, var(--accent2), var(--accent)); color:#fff }
+
+.controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px}
+.controls label{margin:0}
+
+.tableWrap{margin-top:12px}
+.tableScroll{
+  max-height:65vh;
+  overflow:auto;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#fff;
+  box-shadow: var(--shadow);
+}
+
+table{ width:100%; border-collapse:collapse; background:#fff }
+th,td{ padding:10px 12px; text-align:left; border-bottom:1px solid var(--border) }
+
+.tableScroll thead th{
+  position: sticky;
+  top: 0;
+  background:#fff7fb;
+  z-index: 2;
+  user-select:none;
+}
+
+tr:hover td{ background:#fff1f6 }
+th.sortable{ cursor:pointer }
+th.sortable .arrow{ font-size:11px; margin-left:6px; color:#a07a8b }
+
+tr.red    { background: rgba(224,72,102,.12) }
+tr.yellow { background: rgba(232,162,58,.12) }
+tr.green  { background: rgba(58,185,125,.12) }
+
+#toast{
+  position:fixed; bottom:20px; right:20px;
+  background:#ffeef4; color:#4b2c35; border:1px solid #f4cade;
+  padding:12px 14px; border-radius:10px; display:none; box-shadow: var(--shadow)
+}
+
+/* Modal */
+.modal{ display:none; position:fixed; z-index:30; inset:0; background:rgba(255,220,235,.45); backdrop-filter: blur(2px) }
+.modal-content{ background:#fff; color:var(--text); margin:7% auto; padding:16px; border:1px solid var(--border); width:360px; border-radius:12px }
+.modal-content h3{ margin:0 0 8px }
+.close{ color:#a07a8b; float:right; font-size:24px; font-weight:bold; cursor:pointer }
+label{ display:block; margin:8px 0 4px }
+input[type="number"], input[type="text"], select{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#fff7fb; color:var(--text) }
+.modal .actions{ text-align:right; margin-top:12px }
 </style>
 </head>
 <body>
 <header>
-  <h1>Inventaire Bébé <small style="font-weight:normal">v2.3.2</small></h1>
+  <h1>L'inventaire de bébé <span class="pill">La maison Rose</span></h1>
+  <div class="spacer"></div>
+  <a class="btn-ghost" href="https://axoudc.github.io/lamaisonrose/" target="_self">🏠 Accueil</a>
 </header>
 
 <div class="container">
-  <div id="tabs"></div>
-  <button id="addBtn">➕ Ajouter dans cet onglet</button>
-  <span id="status" class="smallmuted"></span>
-  <div id="tableContainer"></div>
+  <div class="card">
+    <div class="hd">
+      <div>Gestion de l’inventaire</div>
+      <div class="smallmuted" id="status"></div>
+    </div>
+    <div class="bd">
+      <div id="tabs"></div>
+
+      <div class="controls">
+        <button id="addBtn">➕ Ajouter dans cet onglet</button>
+
+        <label class="smallmuted" for="sortSelect">Tri</label>
+        <select id="sortSelect">
+          <option value="">Aucun</option>
+          <option value="Objet">Objet (A→Z)</option>
+          <option value="Taille">Taille (A→Z)</option>
+          <option value="__etat">État (Rouge→Jaune→Vert)</option>
+        </select>
+      </div>
+
+      <div class="tableWrap" id="tableContainer"></div>
+    </div>
+  </div>
 </div>
 
+<!-- Modal d’ajout -->
 <div id="addModal" class="modal">
   <div class="modal-content">
     <span class="close" id="closeModal">&times;</span>
     <h3>Ajouter dans <span id="modalSheet"></span></h3>
+
     <label>Objet existant</label>
     <select id="objSelect"></select>
+
     <label>…ou nouvel objet</label>
-    <input id="newObj" type="text">
+    <input id="newObj" type="text" placeholder="Body, Pyjama, ...">
+
     <label>Taille existante</label>
     <select id="tailleSelect"></select>
+
     <label>…ou nouvelle taille</label>
-    <input id="newTaille" type="text">
+    <input id="newTaille" type="text" placeholder="Naissance, 1M, 3M, ...">
+
     <label>Quantité à ajouter</label>
     <input type="number" id="addQty" min="1" value="1">
-    <div style="text-align:right;margin-top:12px">
+
+    <div class="actions">
       <button id="confirmAdd">Valider</button>
     </div>
+    <div class="smallmuted" style="margin-top:6px">Astuce : choisir un objet remplit la liste des tailles correspondantes.</div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
+/* ====== Config ====== */
 const execUrl = "https://script.google.com/macros/s/AKfycbwLChjg9xy9xjzUkzHMlvhtyPW-EJ9VujnMIZxOsCXZcsGqq_ZXvVkbJcPK7uPleiZh1g/exec";
+
+/* ====== State ====== */
 let data = {}, currentSheet = "Habits";
 let originalOrder = { "Habits": [], "Accessoires": [] };
 let sortState = {
-  "Habits": { key: null, dir: 0 },
+  "Habits": { key: null, dir: 0 },        // dir: 1 asc, -1 desc, 0 none
   "Accessoires": { key: null, dir: 0 }
 };
 
+/* ====== UI helpers ====== */
 function showToast(msg, ok=true){
   const t = document.getElementById('toast');
-  t.style.background = ok ? '#4caf50' : '#f44336';
+  t.style.background = ok ? '#ffeef4' : '#fff0f0';
+  t.style.borderColor = ok ? '#f4cade' : '#f3b6b6';
   t.textContent = msg;
   t.style.display = 'block';
-  setTimeout(()=>t.style.display='none',3000);
+  setTimeout(()=>t.style.display='none', 3000);
 }
-
 function setStatus(msg, err=false){
   const s = document.getElementById('status');
   s.textContent = msg || '';
-  s.style.color = err ? '#c0392b' : '#666';
+  s.style.color = err ? '#b03a48' : 'var(--muted)';
 }
 
+/* ====== Color logic ====== */
 function colorClass(nec, pos){
   nec = parseInt(nec)||0; pos = parseInt(pos)||0;
   if(pos > nec) return 'green';
@@ -93,24 +197,29 @@ function colorClass(nec, pos){
   return '';
 }
 
+/* ====== Tabs ====== */
 function renderTabs(){
   const tabsDiv = document.getElementById('tabs');
   tabsDiv.innerHTML = '';
   ['Habits','Accessoires'].forEach(name=>{
     const b = document.createElement('button');
     b.textContent = name;
-    if(name===currentSheet) b.style.fontWeight='bold';
+    if(name===currentSheet){
+      b.style.border = '1px solid var(--accent)';
+      b.style.background = 'linear-gradient(180deg, var(--accent2), var(--accent))';
+      b.style.color = '#fff';
+    }
     b.onclick=()=>{currentSheet=name; renderTable();};
     tabsDiv.appendChild(b);
   });
 }
 
+/* ====== Sorting ====== */
 function arrowFor(col){
   const st = sortState[currentSheet];
   if(st.key !== col || st.dir===0) return '';
   return st.dir === 1 ? '▲' : '▼';
 }
-
 function cycleSort(col){
   const st = sortState[currentSheet];
   if(st.key !== col){ st.key = col; st.dir = 1; }
@@ -119,43 +228,67 @@ function cycleSort(col){
   renderTable();
 }
 
+/* ====== Table render ====== */
 function renderTable(){
   const cont = document.getElementById('tableContainer');
   let rows = (data[currentSheet] || []).slice();
   const st = sortState[currentSheet];
+
   if(st.key && st.dir){
     const key = st.key;
-    rows.sort((a,b)=> String(a[key]||'').localeCompare(String(b[key]||''), 'fr') * st.dir);
+    if(key === "__etat"){
+      const order = { "red":0, "yellow":1, "green":2, "":3 };
+      rows.sort((a,b)=> {
+        const ca = colorClass(a['Qté nécessaire'], a['Qté possédée']);
+        const cb = colorClass(b['Qté nécessaire'], b['Qté possédée']);
+        return (order[ca] - order[cb]) * st.dir;
+      });
+    } else {
+      rows.sort((a,b)=> String(a[key]||'').localeCompare(String(b[key]||''), 'fr') * st.dir);
+    }
   } else {
     const order = originalOrder[currentSheet];
     rows.sort((a,b)=> (order.indexOf(a.__oid) - order.indexOf(b.__oid)));
   }
-  let html = `<table>
+
+  let html = `<div class="tableScroll">
+  <table>
+    <thead>
     <tr>
       <th class="sortable" data-col="Objet">Objet <span class="arrow">${arrowFor('Objet')}</span></th>
       <th class="sortable" data-col="Taille">Taille <span class="arrow">${arrowFor('Taille')}</span></th>
       <th>Qté nécessaire</th>
       <th>Qté possédée</th>
       <th>Saison</th>
-    </tr>`;
+      <th class="sortable" data-col="__etat">État <span class="arrow">${arrowFor('__etat')}</span></th>
+    </tr>
+    </thead>
+    <tbody>`;
+
   rows.forEach(r=>{
-    html += `<tr class="${colorClass(r['Qté nécessaire'], r['Qté possédée'])}">
+    const cls = colorClass(r['Qté nécessaire'], r['Qté possédée']);
+    const label = cls==='green' ? 'OK' : (cls==='yellow' ? 'Partiel' : (cls==='red' ? 'À obtenir' : '—'));
+    html += `<tr class="${cls}">
       <td>${r.Objet||''}</td>
       <td>${r.Taille||''}</td>
       <td>${r['Qté nécessaire']}</td>
       <td>${r['Qté possédée']}</td>
       <td>${r.Saison||''}</td>
+      <td>${label}</td>
     </tr>`;
   });
-  html += '</table>';
+  html += `</tbody></table></div>`;
   cont.innerHTML = html;
+
+  // clickable headers
   cont.querySelectorAll('th.sortable').forEach(th=>{
     th.onclick = () => cycleSort(th.getAttribute('data-col'));
   });
 }
 
+/* ====== Load/Save ====== */
 async function loadSheet(name){
-  const res = await fetch(execUrl+'?sheet='+encodeURIComponent(name), {cache:"no-store"});
+  const res = await fetch(execUrl+'?sheet='+encodeURIComponent(name)+'&ts='+Date.now(), {cache:"no-store"});
   if(!res.ok) throw new Error("HTTP "+res.status);
   const js = await res.json();
   const rows = (js.rows||[])
@@ -178,8 +311,21 @@ async function loadAll(){
     setStatus("Erreur : "+(e.message||e), true);
     showToast("Échec du chargement", false);
   }
+
+  // sort selector binding (after initial DOM)
+  const sortSelect = document.getElementById('sortSelect');
+  if (sortSelect){
+    sortSelect.addEventListener('change', (e)=>{
+      const v = e.target.value || null;
+      const st = sortState[currentSheet];
+      st.key = v;
+      st.dir = v ? 1 : 0; // __etat: 1 = Rouge→Jaune→Vert
+      renderTable();
+    });
+  }
 }
 
+/* ====== Add modal ====== */
 function fillSelect(selectEl, items){
   while(selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
   const opt0 = document.createElement('option'); opt0.value=""; opt0.textContent="--";
@@ -195,27 +341,26 @@ document.getElementById('addBtn').onclick=()=>{
   document.getElementById('modalSheet').textContent = currentSheet;
   const rows = data[currentSheet] || [];
   const objs = Array.from(new Set(rows.map(r=>r.Objet).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
+  const taillesGlobales = Array.from(new Set(rows.map(r=>r.Taille).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
   fillSelect(document.getElementById('objSelect'), objs);
-  const tailles = Array.from(new Set(rows.map(r=>r.Taille).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
-  fillSelect(document.getElementById('tailleSelect'), tailles);
+  fillSelect(document.getElementById('tailleSelect'), taillesGlobales);
+
   document.getElementById('objSelect').onchange = () => {
     const val = document.getElementById('objSelect').value;
-    if(!val) { fillSelect(document.getElementById('tailleSelect'), tailles); return; }
+    if(!val) { fillSelect(document.getElementById('tailleSelect'), taillesGlobales); return; }
     const tset = Array.from(new Set(rows.filter(r=>r.Objet===val).map(r=>r.Taille).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'));
     fillSelect(document.getElementById('tailleSelect'), tset);
   };
   modal.style.display='block';
 };
-
-document.getElementById('closeModal').onclick=()=>{
-  document.getElementById('addModal').style.display='none';
-};
+document.getElementById('closeModal').onclick=()=>{ document.getElementById('addModal').style.display='none'; };
 
 document.getElementById('confirmAdd').onclick=async()=>{
   const obj = document.getElementById('newObj').value.trim() || document.getElementById('objSelect').value.trim();
   const taille = document.getElementById('newTaille').value.trim() || document.getElementById('tailleSelect').value.trim();
   const qty = parseInt(document.getElementById('addQty').value)||0;
   if(!obj || !taille || qty<=0){ alert('Champs incomplets'); return; }
+
   let rows = data[currentSheet]||[];
   let found = rows.find(r=>String(r.Objet)===obj && String(r.Taille)===taille);
   if(found) found['Qté possédée'] = (parseInt(found['Qté possédée'])||0) + qty;
@@ -226,6 +371,7 @@ document.getElementById('confirmAdd').onclick=async()=>{
     originalOrder[currentSheet].push(newOid);
   }
   data[currentSheet]=rows;
+
   try {
     setStatus("Enregistrement…");
     const payload = { sheet: currentSheet, rows: rows.map(r=>{const o={...r}; delete o.__oid; return o;}) };
@@ -247,7 +393,8 @@ document.getElementById('confirmAdd').onclick=async()=>{
   renderTable();
 };
 
-window.onload=loadAll;
+/* ====== Boot ====== */
+window.onload = loadAll;
 </script>
 </body>
 </html>
