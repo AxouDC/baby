@@ -1,0 +1,433 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inventaire Bébé — v1</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    :root{
+      --bg:#0f1218; --card:#171b22; --muted:#9aa4b2; --text:#e7edf3; --accent:#6aa7ff;
+      --ok:#3ecf8e; --warn:#ffb020; --danger:#ff6b6b; --br:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--text); background:radial-gradient(1200px 800px at 10% -10%, #1b2230 0, #0f1218 60%);
+    }
+    header{padding:24px 20px 10px; position:sticky; top:0; z-index:20;
+      background:linear-gradient(180deg, rgba(15,18,24,.9), rgba(15,18,24,.5) 60%, rgba(15,18,24,0)); backdrop-filter: blur(6px);}
+    h1{margin:0 0 6px; font-size:22px}
+    .sub{color:var(--muted); font-size:13px}
+    .wrap{padding:14px 20px 28px; display:grid; gap:16px}
+    .card{background:var(--card); border-radius:var(--br); border:1px solid #232a36; box-shadow: 0 0 0 1px rgba(255,255,255,.02) inset}
+    .card > .hd{padding:12px 14px; border-bottom:1px solid #232a36; font-weight:600; display:flex; align-items:center; gap:10px; justify-content:space-between;}
+    .card > .bd{padding:14px 14px}
+    .toolbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .toolbar > *{flex:1 0 auto}
+    input, select, button{ width:100%; padding:10px 12px; background:#0f131a; color:var(--text);
+      border:1px solid #2a3241; border-radius:10px; outline:none; font-size:14px; }
+    button{cursor:pointer; background:linear-gradient(180deg,#233146,#172232); border-color:#2f3a4d}
+    button.primary{background:linear-gradient(180deg,#3d5b8e,#2d4163); border-color:#4a6aa0}
+    button.danger{background:linear-gradient(180deg,#7b2b2b,#4f1c1c); border-color:#963c3c}
+    button.small{padding:6px 10px; font-size:12px}
+    .tabs{display:flex; gap:6px; flex-wrap:wrap}
+    .tab{padding:8px 12px; border-radius:999px; border:1px solid #2a3241; background:#0f131a; color:#cfd7e3; cursor:pointer}
+    .tab.active{border-color:#4a6aa0; background:#1a2232; color:#e7edf3}
+    table{width:100%; border-collapse:collapse; font-size:13px}
+    th, td{padding:8px 10px; border-bottom:1px solid #232a36; vertical-align:middle}
+    th{position:sticky; top:0; background:#151a23; z-index:5}
+    tr:hover td{background:#121826}
+    .qtycell{display:flex; gap:6px; align-items:center}
+    .qtycell input{width:72px; text-align:center}
+    .pill{display:inline-block; padding:2px 8px; border-radius:999px; background:#0f1722; border:1px solid #273245; color:#c8d2df; font-size:12px}
+    .note{color:var(--muted); font-size:12px}
+    .row-red{ background: linear-gradient(180deg, rgba(255,0,0,.06), transparent 30%); }
+    .row-yellow{ background: linear-gradient(180deg, rgba(255,255,0,.06), transparent 30%); }
+    .row-green{ background: linear-gradient(180deg, rgba(0,255,0,.06), transparent 30%); }
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{padding:6px 10px; border:1px solid #273245; border-radius:999px; background:#0f1722; font-size:13px}
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .right{ text-align:right }
+    .nowrap{ white-space:nowrap }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Inventaire Bébé <span class="pill">v1</span></h1>
+  <div class="sub">Charge un fichier Excel/CSV (onglets <b>Habits</b> et <b>Accessoires</b>), puis mets à jour les quantités et ajoute des lignes.</div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="hd">
+      <div class="tabs" id="tabs"></div>
+      <div class="toolbar" style="max-width:620px">
+        <input type="file" id="fileInput" accept=".xls,.xlsx,.xlsm,.csv" />
+        <button id="btnExport" class="primary">Exporter l'onglet en CSV</button>
+        <button id="btnSaveCache">Sauvegarder le cache</button>
+        <button id="btnClearCache" class="danger">Vider le cache</button>
+      </div>
+    </div>
+    <div class="bd">
+      <div class="toolbar" style="margin-bottom:12px">
+        <input id="search" placeholder="Rechercher objet/taille/saison…" />
+        <select id="filterSaison">
+          <option value="">Saison (toutes)</option>
+          <option>Hiver</option><option>Printemps</option><option>Été</option><option>Automne</option>
+        </select>
+        <select id="triBy">
+          <option value="">Tri (aucun)</option>
+          <option value="Objet">Objet</option>
+          <option value="Taille">Taille</option>
+          <option value="Necessaire">Qté nécessaire</option>
+          <option value="Possedee">Qté possédée</option>
+          <option value="Saison">Saison</option>
+        </select>
+        <div class="right nowrap" style="flex:0 0 auto">
+          <span class="note">Couleurs : 0 = rouge • partiel = jaune • OK/plus = vert</span>
+        </div>
+      </div>
+
+      <div style="overflow:auto; max-height:52vh; border:1px solid #232a36; border-radius:12px">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th style="width:32px">#</th>
+              <th>Objet</th>
+              <th>Taille</th>
+              <th class="right">Qté nécessaire</th>
+              <th class="right">Qté possédée</th>
+              <th>Saison</th>
+              <th style="width:130px">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:14px">
+        <div class="grid2">
+          <div>
+            <h3 style="margin:0 0 8px">Ajouter une ligne</h3>
+            <div class="grid2" style="grid-template-columns: 1.5fr 1fr">
+              <input id="newObjet" placeholder="Objet" />
+              <input id="newTaille" placeholder="Taille" />
+            </div>
+            <div class="grid2" style="margin-top:8px">
+              <input id="newNecessaire" type="number" min="0" step="1" placeholder="Qté nécessaire" />
+              <input id="newPossedee" type="number" min="0" step="1" placeholder="Qté possédée" />
+            </div>
+            <div class="grid2" style="margin-top:8px">
+              <input id="newSaison" placeholder="Saison (ex: Hiver)" />
+              <button id="btnAdd" class="primary">Ajouter</button>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin:0 0 8px">Stats rapides</h3>
+            <div class="chips" id="chips"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+(function(){
+  const COLS = ["Objet","Taille","Necessaire","Possedee","Saison"];
+  const CACHE_KEY = "inv_bebe_v1";
+
+  let dataBySheet = {}; // {sheetName: [{Objet, Taille, Necessaire, Possedee, Saison}]}
+  let current = "Habits";
+
+  const el = sel => document.querySelector(sel);
+  const esc = s => String(s??"").replace(/[&<>\"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+  const toInt = v => {
+    if(v===null || v===undefined || v==="") return 0;
+    const n = parseInt(String(v).replace(/[^0-9\\-]/g,""),10);
+    return isFinite(n) ? n : 0;
+  };
+
+  function headerMap(h){
+    const x = String(h).trim().toLowerCase();
+    if(/objet|article|item/.test(x)) return "Objet";
+    if(/taille|size/.test(x)) return "Taille";
+    if(/nécess|necess|besoin|required/.test(x)) return "Necessaire";
+    if(/poss|have|stock/.test(x)) return "Possedee";
+    if(/saison|season/.test(x)) return "Saison";
+    return null;
+  }
+
+  function normalizeRows(rows){
+    if(!rows || !rows.length) return [];
+    // rows are arrays (header:1)
+    const hdr = rows[0].map(headerMap);
+    const out = [];
+    for(let i=1;i<rows.length;i++){
+      const row = rows[i]; if(!row) continue;
+      const o = {Objet:"",Taille:"",Necessaire:0,Possedee:0,Saison:""};
+      row.forEach((cell,idx)=>{
+        const key = hdr[idx];
+        if(!key) return;
+        if(key==="Necessaire" || key==="Possedee") o[key] = toInt(cell);
+        else o[key] = (cell??"").toString().trim();
+      });
+      if(o.Objet || o.Taille || o.Saison) out.push(o);
+    }
+    return out;
+  }
+
+  function renderTabs(){
+    const tabs = el("#tabs"); tabs.innerHTML = "";
+    const names = Object.keys(dataBySheet);
+    names.forEach(n=>{
+      const b = document.createElement("button");
+      b.className = "tab" + (n===current? " active": "");
+      b.textContent = n;
+      b.onclick = () => { current = n; renderAll(); };
+      tabs.appendChild(b);
+    });
+  }
+
+  function colorClass(nec, pos){
+    nec = toInt(nec); pos = toInt(pos);
+    if(nec <= 0){
+      if(pos>0) return "row-green"; // no need but some stock
+      return ""; // neutral
+    }
+    if(pos <= 0) return "row-red";
+    if(pos < nec) return "row-yellow";
+    return "row-green";
+  }
+
+  function renderTable(){
+    const tb = el("#tbl tbody"); tb.innerHTML = "";
+    const q = el("#search").value.trim().toLowerCase();
+    const saison = el("#filterSaison").value;
+    const tri = el("#triBy").value;
+
+    let rows = (dataBySheet[current]||[]).slice();
+
+    if(q){
+      rows = rows.filter(r =>
+        (r.Objet||"").toLowerCase().includes(q) ||
+        (r.Taille||"").toLowerCase().includes(q) ||
+        (r.Saison||"").toLowerCase().includes(q)
+      );
+    }
+    if(saison){
+      rows = rows.filter(r => (r.Saison||"").toLowerCase().includes(saison.toLowerCase()));
+    }
+    if(tri){
+      rows.sort((a,b)=>{
+        const A = a[tri], B = b[tri];
+        if(tri==="Necessaire"||tri==="Possedee") return toInt(A)-toInt(B);
+        return String(A??"").localeCompare(String(B??""), "fr");
+      });
+    }
+
+    rows.forEach((r, idx)=>{
+      const tr = document.createElement("tr");
+      tr.className = colorClass(r.Necessaire, r.Possedee);
+      tr.innerHTML = `
+        <td class="muted">${idx+1}</td>
+        <td contenteditable="true" data-k="Objet">${esc(r.Objet)}</td>
+        <td contenteditable="true" data-k="Taille">${esc(r.Taille)}</td>
+        <td class="right"><input type="number" min="0" step="1" value="${esc(r.Necessaire)}" data-k="Necessaire" style="width:90px;text-align:right"></td>
+        <td class="right">
+          <div class="qtycell">
+            <button class="small" data-act="dec">−</button>
+            <input type="number" min="0" step="1" value="${esc(r.Possedee)}" data-k="Possedee">
+            <button class="small" data-act="inc">+</button>
+          </div>
+        </td>
+        <td contenteditable="true" data-k="Saison">${esc(r.Saison)}</td>
+        <td>
+          <div style="display:flex; gap:6px">
+            <button class="small" data-act="dup">Dupliquer</button>
+            <button class="small danger" data-act="del">Supprimer</button>
+          </div>
+        </td>
+      `;
+
+      // events
+      tr.querySelectorAll("[contenteditable]").forEach(cell=>{
+        cell.addEventListener("blur", e=>{
+          const k = cell.dataset.k;
+          r[k] = cell.textContent.trim();
+          tr.className = colorClass(r.Necessaire, r.Possedee);
+          saveCacheSilent();
+          renderChips();
+        });
+      });
+      tr.querySelectorAll('input[type="number"]').forEach(inp=>{
+        inp.addEventListener("input", e=>{
+          const k = inp.dataset.k;
+          r[k] = toInt(inp.value);
+          tr.className = colorClass(r.Necessaire, r.Possedee);
+          saveCacheSilent();
+          renderChips();
+        });
+      });
+      tr.querySelector('[data-act="inc"]').addEventListener("click", ()=>{
+        r.Possedee = toInt(r.Possedee)+1;
+        renderTable(); saveCacheSilent();
+      });
+      tr.querySelector('[data-act="dec"]').addEventListener("click", ()=>{
+        r.Possedee = Math.max(0, toInt(r.Possedee)-1);
+        renderTable(); saveCacheSilent();
+      });
+      tr.querySelector('[data-act="dup"]').addEventListener("click", ()=>{
+        (dataBySheet[current]||[]).push({...r});
+        renderAll(); saveCacheSilent();
+      });
+      tr.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+        const arr = (dataBySheet[current]||[]);
+        const realIdx = arr.indexOf(r);
+        if(realIdx>-1){ arr.splice(realIdx,1); renderAll(); saveCacheSilent(); }
+      });
+
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderChips(){
+    const box = el("#chips"); box.innerHTML = "";
+    const arr = dataBySheet[current]||[];
+    const totalLignes = arr.length;
+    const totalNec = arr.reduce((s,r)=> s+toInt(r.Necessaire), 0);
+    const totalPos = arr.reduce((s,r)=> s+toInt(r.Possedee), 0);
+    const ok = arr.filter(r=> toInt(r.Possedee) >= toInt(r.Necessaire) && toInt(r.Necessaire)>0).length;
+    const part = arr.filter(r=> toInt(r.Possedee) > 0 && toInt(r.Possedee) < toInt(r.Necessaire)).length;
+    const zero = arr.filter(r=> toInt(r.Possedee) === 0 && toInt(r.Necessaire)>0).length;
+
+    const add = (label, val) => {
+      const chip = document.createElement("span"); chip.className="chip";
+      chip.textContent = `${label}: ${val}`; box.appendChild(chip);
+    };
+    add("Lignes", totalLignes);
+    add("Qté nécessaire (Σ)", totalNec);
+    add("Qté possédée (Σ)", totalPos);
+    add("OK", ok);
+    add("Partiel", part);
+    add("À zéro", zero);
+  }
+
+  function renderAll(){
+    renderTabs();
+    renderTable();
+    renderChips();
+  }
+
+  // Add row
+  el("#btnAdd").addEventListener("click", ()=>{
+    const o = el("#newObjet").value.trim();
+    const t = el("#newTaille").value.trim();
+    const n = toInt(el("#newNecessaire").value);
+    const p = toInt(el("#newPossedee").value);
+    const s = el("#newSaison").value.trim();
+    if(!o && !t && !s) return;
+    (dataBySheet[current]||[]).push({Objet:o, Taille:t, Necessaire:n, Possedee:p, Saison:s});
+    el("#newObjet").value=""; el("#newTaille").value=""; el("#newNecessaire").value=""; el("#newPossedee").value=""; el("#newSaison").value="";
+    renderAll(); saveCacheSilent();
+  });
+
+  // Filters
+  el("#search").addEventListener("input", renderTable);
+  el("#filterSaison").addEventListener("change", renderTable);
+  el("#triBy").addEventListener("change", renderTable);
+
+  // Export CSV for current tab
+  el("#btnExport").addEventListener("click", ()=>{
+    const rows = dataBySheet[current]||[];
+    const headers = ["Objet","Taille","Qté nécessaire","Qté possédée","Saison"];
+    const csv = [headers.join(",")].concat(
+      rows.map(r => [r.Objet, r.Taille, toInt(r.Necessaire), toInt(r.Possedee), r.Saison]
+        .map(v=> `"${String(v??"").replace(/"/g,'""')}"`).join(","))
+    ).join("\\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `inventaire_${current}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Cache
+  function saveCacheSilent(){
+    try{
+      const payload = {dataBySheet, current};
+      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    }catch(e){}
+  }
+  el("#btnSaveCache").addEventListener("click", ()=>{
+    saveCacheSilent();
+    alert("Cache local sauvegardé ✅");
+  });
+  el("#btnClearCache").addEventListener("click", ()=>{
+    if(confirm("Vider le cache local ?")){
+      localStorage.removeItem(CACHE_KEY);
+      alert("Cache vidé.");
+    }
+  });
+
+  (function loadCache(){
+    try{
+      const s = localStorage.getItem(CACHE_KEY);
+      if(!s) return;
+      const obj = JSON.parse(s);
+      if(obj && obj.dataBySheet){
+        dataBySheet = obj.dataBySheet;
+        current = obj.current || Object.keys(dataBySheet)[0] || "Habits";
+        renderAll();
+      }
+    }catch(e){}
+  })();
+
+  // File load
+  el("#fileInput").addEventListener("change", async (ev)=>{
+    const file = ev.target.files[0]; if(!file) return;
+    const name = file.name.toLowerCase();
+    try{
+      if(name.endsWith(".csv")){
+        const txt = await file.text();
+        const rows = txt.split(/\r?\n/).map(l => l.split(",").map(s => s.replace(/^"|"$/g,"").replace(/""/g,'"')));
+        // CSV → on remplit juste "Habits"
+        dataBySheet = { "Habits": normalizeRows(rows) };
+      } else {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, {type:"array"});
+        dataBySheet = {};
+        const names = wb.SheetNames;
+        names.forEach(sn => {
+          const sheet = wb.Sheets[sn];
+          const arr = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""}); // as arrays
+          const rows = normalizeRows(arr);
+          dataBySheet[sn] = rows;
+        });
+        const keys = Object.keys(dataBySheet);
+        current = keys.includes("Habits") ? "Habits" : (keys[0]||"Habits");
+      }
+      renderAll();
+      saveCacheSilent();
+    } catch(err){
+      console.error(err);
+      alert("Échec de lecture du fichier : " + err.message);
+    }
+  });
+
+  // Initial empty state
+  if(Object.keys(dataBySheet).length===0){
+    dataBySheet = { "Habits": [], "Accessoires": [] };
+    current = "Habits";
+    renderAll();
+  }
+})();
+</script>
+</body>
+</html>
