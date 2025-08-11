@@ -1,9 +1,9 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pronostics — La maison Rose (v5.9)</title>
+  <title>Pronostics — La maison Rose (v6.0 autosave)</title>
   <style>
   :root{
     --bg:#fff7fa; --bg1:#fff1f6; --bg2:#ffeaf2;
@@ -59,8 +59,12 @@
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--br);box-shadow:var(--shadow)}
   .card > .hd{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;display:flex;align-items:center;gap:10px;justify-content:space-between}
   .card > .bd{padding:14px 16px}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
-  .kpi{padding:12px;background:#fff;border:1px solid var(--border);border-radius:12px}
+  /* KPIs (format ancienne page) */
+  .kpis{ display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:12px; margin-bottom:12px }
+  .kpi{ padding:12px 14px; background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow: var(--shadow) }
+  .kpi > span.muted{ font-size:12px; color: var(--muted) }
+  .kpi > b{ display:block; margin-top:6px; font-size:22px; font-weight:700; color: var(--text) }
+
   table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
   th,td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
   th{position:sticky;top:0;background:#fff7fb;z-index:5}
@@ -76,41 +80,18 @@
   .chartBox{height:300px;padding:8px}
   canvas{width:100% !important;height:100% !important}
   .status{font-size:12px;color:var(--muted)}
-  /* === KPIs : même format que l’ancienne page === */
-.kpis{
-  display:grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap:12px;
-  margin-bottom:12px;
-}
-.kpi{
-  padding:12px 14px;
-  background:#fff;                 /* fond clair (rose pâle global conserve le thème) */
-  border:1px solid var(--border);
-  border-radius:12px;
-  box-shadow: var(--shadow);
-}
-.kpi > span.muted{
-  font-size:12px;
-  color: var(--muted);
-}
-.kpi > b{
-  display:block;
-  margin-top:6px;
-  font-size:22px;                   /* taille identique à l’ancienne */
-  font-weight:700;
-  color: var(--text);
-}
   </style>
 </head>
 <body>
 <header>
-  <h1>Pronostics de bébé <span class="pill">La maison Rose</span></h1>
+  <h1>Pronostics bébé <span class="pill">La maison Rose</span></h1>
   <div class="spacer"></div>
   <a class="btn-ghost" href="https://axoudc.github.io/lamaisonrose/" target="_self">🏠 Accueil</a>
 </header>
 
+<!-- Par défaut: panneau FERMÉ -->
 <div class="wrap collapsed" id="wrap">
+  <!-- Colonne gauche -->
   <section class="card" id="panelLeft">
     <div class="hd">
       <span>Données (Google Sheets)</span>
@@ -120,22 +101,18 @@
       </div>
     </div>
     <div class="bd">
-      <div class="status" id="cloudStatus"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px">
-        <button class="primary" id="btnCloudLoad" onclick="loadFromCloud()">Charger depuis Google Sheets</button>
-        <button id="btnCloudSave" onclick="saveToCloud()">Enregistrer vers Google Sheets</button>
-      </div>
-      <div class="pill">Par défaut, la saisie est verrouillée (code requis)</div>
+      <div class="status" id="cloudStatus">—</div>
+      <div class="pill" style="margin-top:8px">Par défaut, la saisie est verrouillée (code requis)</div>
       <hr style="border:none;border-top:1px solid var(--border);margin:14px 0">
       <form id="form" onsubmit="return submitForm(event)">
         <div class="grid" style="display:grid;gap:12px">
-          <div><label>Joueur</label><input id="fJoueur" required placeholder=""></div>
+          <div><label>Joueur</label><input id="fJoueur" required placeholder="Nom ou pseudo"></div>
           <div><label>Sexe</label>
             <select id="fSexe"><option value="">—</option><option>Fille</option><option>Garçon</option><option>Indéterminé</option></select>
           </div>
-          <div><label>Prénom(s)</label><input id="fPrenom" placeholder=""></div>
-          <div><label>Taille (cm)</label><input id="fTaille" type="number" step="1" min="35" max="65" placeholder=""></div>
-          <div><label>Poids (kg)</label><input id="fPoidsKg" type="number" step="0.001" min="2" max="6" placeholder=""></div>
+          <div><label>Prénom(s)</label><input id="fPrenom" placeholder="Ex: Léa; Emma"></div>
+          <div><label>Taille (cm)</label><input id="fTaille" type="number" step="1" min="40" max="65" placeholder="ex. 51"></div>
+          <div><label>Poids (kg)</label><input id="fPoidsKg" type="number" step="0.001" min="2" max="6" placeholder="ex. 3.280"></div>
           <div><label>Date</label><input id="fDate" type="date"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
@@ -147,6 +124,7 @@
     </div>
   </section>
 
+  <!-- Colonne droite -->
   <section class="card" id="panelRight">
     <div class="hd">
       <span>Vue d’ensemble</span>
@@ -220,8 +198,10 @@
   </section>
 </div>
 
+<!-- Toasts -->
 <div id="toastContainer"></div>
 
+<!-- Lock modal -->
 <div id="lockMask">
   <div id="lockCard">
     <h3>Déverrouiller la saisie</h3>
@@ -248,28 +228,21 @@ let unlocked = false; let chartSexe = null;
 
 /* ===== Helpers ===== */
 const $ = s => document.querySelector(s);
-const byId = id => document.getElementById(id);
-
 function showToast(msg, ok=true, small=""){
-  const cont = byId("toastContainer");
+  const cont = $("#toastContainer");
   const t = document.createElement("div");
   t.className = "toast" + (ok ? "" : " err");
   t.textContent = msg;
   if (small){
     const span = document.createElement("span");
-    span.style.display = "block";
-    span.style.fontSize = "12px";
-    span.style.opacity = ".8";
-    span.textContent = small;
-    t.appendChild(span);
+    span.style.display = "block"; span.style.fontSize = "12px"; span.style.opacity = ".8";
+    span.textContent = small; t.appendChild(span);
   }
   cont.appendChild(t);
   setTimeout(()=>t.remove(), 3500);
 }
 function setCloudStatus(msg, err=false){
-  const s = byId('cloudStatus');
-  s.textContent = msg;
-  s.style.color = err ? '#b03a48' : '#7b5f6a';
+  const s = $('#cloudStatus'); s.textContent = msg; s.style.color = err ? '#b03a48' : '#7b5f6a';
 }
 function normalizeSexe(s){
   if(!s) return "";
@@ -309,6 +282,27 @@ const fmt = {
 };
 function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 
+/* ===== Auto-save helper (debounce) ===== */
+let pendingSave = false;
+let saveTimer = null;
+function requestAutoSave(from=""){
+  if(!unlocked) return;                 // on ne sauvegarde qu'en mode déverrouillé
+  pendingSave = true;
+  setCloudStatus("Enregistrement…");
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      await saveToCloud();
+      pendingSave = false;
+      setCloudStatus("Enregistré ✅");
+      // showToast("Enregistrement auto réussi ✅");
+    }catch(e){
+      setCloudStatus("Erreur d'enregistrement", true);
+      showToast("Échec de l'enregistrement auto ❌", false, e.message||String(e));
+    }
+  }, 1200);
+}
+
 /* ===== Core ===== */
 function cleanAndNormalize(arr){
   const aliasPrenom = ["Prénom","Prenom","Prénoms","Prenoms","Prénom proposé","Prenom propose","Prénom pressenti","Prenom pressenti","prenom","prénom"];
@@ -326,8 +320,8 @@ function cleanAndNormalize(arr){
 }
 
 function filterAndSort(){
-  const q = byId("search").value.trim().toLowerCase();
-  const sortKey = byId("sortBy").value;
+  const q = $("#search").value.trim().toLowerCase();
+  const sortKey = $("#sortBy").value;
   filtered = rows.filter(r => {
     if(!q) return true;
     return COLS.some(k => (r[k]??"").toString().toLowerCase().includes(q));
@@ -343,7 +337,7 @@ function filterAndSort(){
 }
 
 function renderTable(){
-  const tb = byId("tbl").querySelector("tbody");
+  const tb = $("#tbl").querySelector("tbody");
   tb.innerHTML = "";
   filtered.forEach((r, i) => {
     const tr = document.createElement("tr");
@@ -358,7 +352,7 @@ function renderTable(){
     if(unlocked) tr.ondblclick=()=>startEdit(findGlobalIndex(i));
     tb.appendChild(tr);
   });
-  byId("kpiCount").textContent = String(rows.length);
+  $("#kpiCount").textContent = String(rows.length);
 }
 
 function renderNamesBySexe(){
@@ -388,10 +382,10 @@ function computeStats(){
   const nums=k=> rows.map(r=>r[k]).filter(v=>typeof v==="number"&&isFinite(v));
   const avg=a=> a.length? a.reduce((x,y)=>x+y,0)/a.length : null;
   const p=avg(nums("Poids (kg)")), t=avg(nums("Taille (cm)"));
-  byId("kpiPoids").textContent = p!=null? fmt.kg(p) : "—";
-  byId("kpiTaille").textContent = t!=null? fmt.cm(t) : "—";
+  $("#kpiPoids").textContent = p!=null? fmt.kg(p) : "—";
+  $("#kpiTaille").textContent = t!=null? fmt.cm(t) : "—";
   const dates=rows.map(r=>r.Date? new Date(r.Date).getTime():null).filter(v=>v!=null&&isFinite(v));
-  byId("kpiDateMoy").textContent = dates.length? fmt.date(new Date(Math.round(dates.reduce((a,b)=>a+b,0)/dates.length))) : "—";
+  $("#kpiDateMoy").textContent = dates.length? fmt.date(new Date(Math.round(dates.reduce((a,b)=>a+b,0)/dates.length))) : "—";
   renderNamesBySexe();
 }
 
@@ -408,20 +402,17 @@ function buildChartSexe(){
 
 function refresh(){
   filterAndSort(); renderTable(); computeStats(); buildChartSexe();
-  const all = byId("chkAll"); if(all) all.checked=false;
+  const all = $("#chkAll"); if(all) all.checked=false;
   setLockedUI();
 }
 
-/* ===== Cloud sync (robuste) ===== */
+/* ===== Cloud sync (auto) ===== */
 async function loadFromCloud(){
-  const ts = Date.now();
-  const url = CLOUD_URL + "?ts=" + ts;
   setCloudStatus("Chargement…");
   try{
-    const res = await fetch(url, { method:"GET", cache:"no-store" });
+    const res = await fetch(CLOUD_URL + "?ts=" + Date.now(), { method:"GET", cache:"no-store" });
     const rawText = await res.text();
-    let js;
-    try { js = JSON.parse(rawText); } catch(_){ js = rawText; }
+    let js; try { js = JSON.parse(rawText); } catch{ js = rawText; }
     let arr = [];
     if(Array.isArray(js?.rows)) arr = js.rows;
     else if (Array.isArray(js?.data)) arr = js.data;
@@ -429,19 +420,13 @@ async function loadFromCloud(){
       const vals = js.values;
       const headers = (vals[0]||[]).map(h=>String(h).trim());
       for(let i=1;i<vals.length;i++){
-        const obj={};
-        (vals[i]||[]).forEach((v,idx)=> obj[headers[idx]||("Col"+idx)] = v );
-        arr.push(obj);
+        const obj={}; (vals[i]||[]).forEach((v,idx)=> obj[headers[idx]||("Col"+idx)] = v ); arr.push(obj);
       }
-    } else if (Array.isArray(js)) {
-      arr = js;
-    } else {
-      throw new Error("Réponse inattendue. Extrait: " + String(rawText).slice(0,120));
-    }
+    } else if (Array.isArray(js)) { arr = js; }
     rows = cleanAndNormalize(arr);
     refresh();
     setCloudStatus(`Chargé (${rows.length} lignes).`);
-    showToast("Chargement réussi ✅", true, `Lignes: ${rows.length}`);
+    // showToast("Chargement réussi ✅", true, `Lignes: ${rows.length}`);
   } catch(e){
     console.error(e);
     setCloudStatus("Erreur de chargement : " + (e.message||e), true);
@@ -451,35 +436,25 @@ async function loadFromCloud(){
 
 async function saveToCloud(){
   if(!unlocked) return;
-  const btn = byId("btnCloudSave");
-  btn.disabled=true; const old=btn.textContent; btn.textContent="Enregistrement…";
   setCloudStatus("Enregistrement…");
-  try{
-    const payload = {
-      rows: rows.map(r => ({
-        "Joueur": r["Joueur"]||"",
-        "Sexe": r["Sexe"]||"",
-        "Prénom": r["Prénom"]||"",
-        "Taille (cm)": r["Taille (cm)"]??"",
-        "Poids (kg)": r["Poids (kg)"]??"",
-        "Date": r["Date"] ? fmt.date(r["Date"]) : ""
-      }))
-    };
-    const res = await fetch(CLOUD_URL, {
-      method:"POST",
-      headers: { "Content-Type":"text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const txt = await res.text();
-    if(!res.ok) throw new Error("HTTP "+res.status+" — "+txt.slice(0,120));
-    setCloudStatus("Enregistré ✅"); showToast("Enregistrement réussi ✅");
-  } catch(e){
-    console.error(e);
-    setCloudStatus("Erreur d'enregistrement : " + (e.message||e), true);
-    showToast("Échec de l'enregistrement ❌", false, e.message||String(e));
-  } finally {
-    btn.textContent=old; btn.disabled=false;
-  }
+  const payload = {
+    rows: rows.map(r => ({
+      "Joueur": r["Joueur"]||"",
+      "Sexe": r["Sexe"]||"",
+      "Prénom": r["Prénom"]||"",
+      "Taille (cm)": r["Taille (cm)"]??"",
+      "Poids (kg)": r["Poids (kg)"]??"",
+      "Date": r["Date"] ? fmt.date(r["Date"]) : ""
+    }))
+  };
+  const res = await fetch(CLOUD_URL, {
+    method:"POST",
+    headers: { "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const txt = await res.text();
+  if(!res.ok) { throw new Error("HTTP "+res.status+" — "+txt.slice(0,120)); }
+  return true;
 }
 
 /* ===== Table & edit ===== */
@@ -492,35 +467,37 @@ function deleteSelected(){
   const idxs = checks.filter(c=>c.checked).map(c=> parseInt(c.dataset.idx||"-1",10)).filter(i=>i>=0);
   rows = rows.filter((_,i)=> !idxs.includes(i));
   refresh();
+  requestAutoSave("deleteSelected");
 }
-function addRow(){ if(!unlocked) return; editIndex=null; byId("form").reset(); byId("fJoueur").focus(); }
+function addRow(){ if(!unlocked) return; editIndex=null; $("#form").reset(); $("#fJoueur").focus(); }
 function startEdit(i){
   if(!unlocked || i==null) return;
   editIndex=i;
   const r=rows[i];
-  byId("fJoueur").value=r["Joueur"]||"";
-  byId("fSexe").value=r["Sexe"]||"";
-  byId("fPrenom").value=r["Prénom"]||"";
-  byId("fTaille").value=r["Taille (cm)"]??"";
-  byId("fPoidsKg").value=r["Poids (kg)"]??"";
-  byId("fDate").value=r["Date"]? toYMD(new Date(r["Date"])):"";
-  byId("editFlag").style.display="inline-block"; byId("fJoueur").focus();
+  $("#fJoueur").value=r["Joueur"]||"";
+  $("#fSexe").value=r["Sexe"]||"";
+  $("#fPrenom").value=r["Prénom"]||"";
+  $("#fTaille").value=r["Taille (cm)"]??"";
+  $("#fPoidsKg").value=r["Poids (kg)"]??"";
+  $("#fDate").value=r["Date"]? toYMD(new Date(r["Date"])):"";
+  $("#editFlag").style.display="inline-block"; $("#fJoueur").focus();
 }
-function cancelEdit(){ editIndex=null; byId("form").reset(); byId("editFlag").style.display="none"; }
+function cancelEdit(){ editIndex=null; $("#form").reset(); $("#editFlag").style.display="none"; }
 function submitForm(e){
   e.preventDefault();
   if(!unlocked) return false;
-  const iso = byId("fDate").value? new Date(byId("fDate").value+"T12:00:00").toISOString() : "";
+  const iso = $("#fDate").value? new Date($("#fDate").value+"T12:00:00").toISOString() : "";
   const obj={
-    "Joueur": byId("fJoueur").value.trim(),
-    "Sexe": normalizeSexe(byId("fSexe").value),
-    "Prénom": byId("fPrenom").value.trim(),
-    "Taille (cm)": parseNumber(byId("fTaille").value),
-    "Poids (kg)": parseNumber(byId("fPoidsKg").value),
+    "Joueur": $("#fJoueur").value.trim(),
+    "Sexe": normalizeSexe($("#fSexe").value),
+    "Prénom": $("#fPrenom").value.trim(),
+    "Taille (cm)": parseNumber($("#fTaille").value),
+    "Poids (kg)": parseNumber($("#fPoidsKg").value),
     "Date": iso
   };
   if(editIndex!=null) rows[editIndex]=obj; else rows.push(obj);
   cancelEdit(); refresh();
+  requestAutoSave("submitForm");
   return false;
 }
 const toYMD = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -530,37 +507,15 @@ function findGlobalIndex(filteredIdx){
 }
 
 /* ===== Volet ===== */
-function togglePanel(){
-  const wrap = byId("wrap"); const btnShow = byId("btnShowPanel");
-  if(!wrap || !btnShow) return;
-  wrap.classList.add("collapsed"); btnShow.style.display="inline-block";
-}
-function showPanel(){
-  const wrap = byId("wrap"); const btnShow = byId("btnShowPanel");
-  if(!wrap || !btnShow) return;
-  wrap.classList.remove("collapsed"); btnShow.style.display="none";
-}
+function togglePanel(){ const wrap = $("#wrap"); const btnShow = $("#btnShowPanel"); wrap.classList.add("collapsed"); btnShow.style.display="inline-block"; }
+function showPanel(){ const wrap = $("#wrap"); const btnShow = $("#btnShowPanel"); wrap.classList.remove("collapsed"); btnShow.style.display="none"; }
 
 /* ===== Lock modal ===== */
-function openLock(){
-  byId("lockMsg").textContent="";
-  byId("lockInput").value="";
-  byId("lockMask").style.display="flex";
-  setTimeout(()=> byId("lockInput").focus(), 50);
-}
-function lockCancel(){ byId("lockMask").style.display="none"; }
-function lockOk(){
-  const v = byId("lockInput").value.trim();
-  if(v === PASSCODE){
-    unlocked = true; byId("lockMask").style.display="none";
-    showToast("Saisie déverrouillée 🔓"); setLockedUI();
-  } else {
-    byId("lockMsg").textContent = "Code incorrect.";
-  }
-}
+function openLock(){ $("#lockMsg").textContent=""; $("#lockInput").value=""; $("#lockMask").style.display="flex"; setTimeout(()=> $("#lockInput").focus(), 50); }
+function lockCancel(){ $("#lockMask").style.display="none"; }
+function lockOk(){ const v = $("#lockInput").value.trim(); if(v==="2983"){ unlocked=true; $("#lockMask").style.display="none"; showToast("Saisie déverrouillée 🔓"); setLockedUI(); } else { $("#lockMsg").textContent="Code incorrect."; } }
 function setLockedUI(){
   const disable = (sel, d) => document.querySelectorAll(sel).forEach(x=> x.disabled = d);
-  disable("#btnCloudSave", !unlocked);
   disable("#btnDeleteSel", !unlocked);
   disable("#btnAddRow", !unlocked);
   document.querySelectorAll("#form input, #form select, #form button[type='submit']").forEach(x=> x.disabled = !unlocked);
@@ -570,10 +525,17 @@ function setLockedUI(){
 function onSearch(){ filterAndSort(); renderTable(); }
 function onSort(){ filterAndSort(); renderTable(); }
 
+/* ===== Before unload (prévenir perte d’auto-save en cours) ===== */
+window.addEventListener("beforeunload", (e)=>{
+  if (unlocked && pendingSave) {
+    e.preventDefault(); e.returnValue = "";
+  }
+});
+
 /* ===== Init ===== */
 (async function init(){
-  try { await loadFromCloud(); } catch(e){ /* toasts gèrent */ }
-  finally { setLockedUI(); byId("btnShowPanel").style.display="inline-block"; }
+  try { await loadFromCloud(); } catch(e){ /* handled via toasts */ }
+  finally { setLockedUI(); $("#btnShowPanel").style.display="inline-block"; }
 })();
 </script>
 </body>
