@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kangoo — Suivi (La maison Rose)</title>
+<style>
+:root{
+  --bg:#fff7fa; --bg1:#fff1f6; --bg2:#ffeaf2;
+  --card:#ffffff; --text:#3a2a30; --muted:#7b5f6a; --border:#efd7e5;
+  --accent:#e470a2; --accent2:#f19ac0; --br:16px;
+  --shadow:0 14px 40px rgba(223,130,170,.18);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; color:var(--text);
+  font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";
+  background:
+    radial-gradient(1000px 700px at 10% -10%, var(--bg1) 0, rgba(255,255,255,0) 60%),
+    radial-gradient(1000px 700px at 110% -10%, var(--bg2) 0, rgba(255,255,255,0) 55%),
+    var(--bg);
+}
+header{
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; gap:12px;
+  padding:12px 14px;
+  background:linear-gradient(180deg, rgba(255,247,250,.92), rgba(255,247,250,.7) 70%, rgba(255,247,250,0));
+  border-bottom:1px solid var(--border);
+  backdrop-filter: blur(6px);
+}
+h1{margin:0;font-size:18px}
+.spacer{flex:1}
+a.btn-ghost{
+  text-decoration:none; color:var(--text);
+  padding:8px 12px; border-radius:10px; border:1px solid var(--border);
+  background:linear-gradient(180deg,#ffe9f3,#ffe2ee); font-size:14px
+}
+.container{max-width:860px; margin:12px auto 28px; padding:0 12px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--br); box-shadow:var(--shadow)}
+.card .hd{padding:12px 14px; border-bottom:1px solid var(--border); font-weight:600; display:flex; align-items:center; justify-content:space-between}
+.card .bd{padding:12px 14px}
+
+label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+input, select, textarea{
+  width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:#fff7fb; color:var(--text);
+  font-size:16px;
+}
+button{cursor:pointer}
+.btn{ padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:linear-gradient(180deg,#fff1f7,#ffe8f0) }
+.btn.primary{ border:1px solid var(--accent); background:linear-gradient(180deg,var(--accent2),var(--accent)); color:#fff }
+.btn.ghost{ background:linear-gradient(180deg,#ffe9f3,#ffe2ee) }
+
+.row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+@media (max-width:560px){ .row{ grid-template-columns:1fr; } }
+
+.kpis{display:grid; grid-template-columns: repeat(3,1fr); gap:10px}
+@media (max-width:560px){ .kpis{ grid-template-columns:1fr; } }
+.kpi{ padding:10px 12px; background:#fff; border:1px solid var(--border); border-radius:12px }
+.kpi b{ display:block; font-size:20px; margin-top:6px }
+
+.controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.controls select, .controls input{ flex:1 0 140px }
+
+.tableScroll{
+  max-height:58vh; overflow:auto; border-radius:12px; border:1px solid var(--border); background:#fff; box-shadow:var(--shadow)
+}
+table{width:100%; border-collapse:collapse; background:#fff}
+th,td{ padding:10px 12px; border-bottom:1px solid var(--border); font-size:15px }
+thead th{ position:sticky; top:0; background:#fff7fb; z-index:2 }
+tr:hover td{ background:#fff1f6 }
+
+.badge{display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#fff1f7; font-size:12px}
+.right{ text-align:right }
+
+#toast{ position:fixed; bottom:20px; right:20px; background:#ffeef4; color:#4b2c35; border:1px solid #f4cade; padding:12px 14px; border-radius:10px; display:none; box-shadow:var(--shadow) }
+.status{ font-size:12px; color:var(--muted) }
+.err{ color:#b03a48 }
+.ok{ color:#2e6d4f }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kangoo — Suivi</h1>
+  <div class="spacer"></div>
+  <a class="btn-ghost" href="https://axoudc.github.io/lamaisonrose/" target="_self">🏠 Accueil</a>
+</header>
+
+<div class="container">
+  <!-- KPIs -->
+  <div class="kpis" style="margin-bottom:10px">
+    <div class="kpi"><span class="muted">Nombre d’opérations</span><b id="kpiCount">0</b></div>
+    <div class="kpi"><span class="muted">Total (€)</span><b id="kpiTotal">—</b></div>
+    <div class="kpi"><span class="muted">Ce mois (€)</span><b id="kpiMonth">—</b></div>
+  </div>
+
+  <!-- Formulaire d’ajout -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="hd">Ajouter une opération <span class="status" id="saveStatus"></span></div>
+    <div class="bd">
+      <form id="formOp">
+        <div class="row">
+          <div>
+            <label for="fDate">Date</label>
+            <input id="fDate" type="date" required>
+          </div>
+          <div>
+            <label for="fType">Type</label>
+            <select id="fType" required>
+              <option value="">—</option>
+              <option>Plein</option>
+              <option>Entretien</option>
+              <option>Réparation</option>
+              <option>Assurance</option>
+              <option>Péage</option>
+              <option>Stationnement</option>
+              <option>Divers</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="fCost">Coût (€)</label>
+            <input id="fCost" type="number" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+          <div>
+            <label for="fKm">Km (optionnel)</label>
+            <input id="fKm" type="number" step="1" min="0" placeholder="ex. 125430">
+          </div>
+        </div>
+        <div>
+          <label for="fNotes">Notes (optionnel)</label>
+          <textarea id="fNotes" rows="2" placeholder="Détails utiles (garage, station, filtre huile…)"></textarea>
+        </div>
+        <div class="row" style="align-items:center">
+          <button class="btn primary" type="submit">Enregistrer</button>
+          <button class="btn" type="button" id="btnReset">Réinitialiser</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste + filtres -->
+  <div class="card">
+    <div class="hd">
+      <div>Historique</div>
+      <div class="status" id="loadStatus"></div>
+    </div>
+    <div class="bd">
+      <div class="controls" style="margin-bottom:8px">
+        <select id="filterType">
+          <option value="">Type (tous)</option>
+          <option>Plein</option>
+          <option>Entretien</option>
+          <option>Réparation</option>
+          <option>Assurance</option>
+          <option>Péage</option>
+          <option>Stationnement</option>
+          <option>Divers</option>
+        </select>
+        <input id="search" placeholder="Recherche (notes, km…)" />
+        <select id="sortBy">
+          <option value="Date.desc">Date ↓</option>
+          <option value="Date.asc">Date ↑</option>
+          <option value="Coût (€).desc">Coût ↓</option>
+          <option value="Coût (€).asc">Coût ↑</option>
+        </select>
+        <button class="btn" id="btnReload">🔄 Recharger</button>
+        <button class="btn" id="btnSaveAll">💾 Enregistrer</button>
+      </div>
+
+      <div class="tableScroll">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th class="right">Coût (€)</th>
+              <th class="right">Km</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ====== Config ====== */
+const EXEC_URL = "https://script.google.com/macros/s/AKfycbwhPxR0vms5toOGSrkqUqT3Cf5e7-lCgNyOUo6bGtV-AHakIg6-CQE5CKNifjmgPtXYfA/exec";
+const COLS = ["Date","Type","Coût (€)","Km","Notes"];
+
+/* ====== State ====== */
+let rows = [];     // données complètes
+let view = [];     // données filtrées/triées pour affichage
+
+/* ====== Helpers ====== */
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2,"0");
+const toYMD = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const fmt = {
+  money: v => (isFinite(v) ? (Math.round(v*100)/100).toFixed(2) : "—"),
+  date: v => {
+    if(!v) return "";
+    const d = new Date(v);
+    if (isNaN(d)) return v;
+    return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+  }
+};
+function parseNumber(n){ if(n==null || n==="") return null; const f=parseFloat(String(n).replace(",",".").replace(/[^\d.-]/g,"")); return isFinite(f)?f:null; }
+function parseDateAny(v){
+  if(!v) return "";
+  if(typeof v==="number"){ const epoch = new Date(Date.UTC(1899,11,30)); return new Date(epoch.getTime() + v*86400000).toISOString(); }
+  const d = new Date(v);
+  if(!isNaN(d)) return d.toISOString();
+  const m = String(v).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){ const [_,dd,mm,yyyy]=m; return new Date(+yyyy, +mm-1, +dd).toISOString(); }
+  return "";
+}
+function showToast(msg, ok=true){
+  const t = $("#toast");
+  t.style.background = ok ? '#ffeef4' : '#fff0f0';
+  t.style.borderColor = ok ? '#f4cade' : '#f3b6b6';
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=> t.style.display='none', 3000);
+}
+function setStatus(el, msg, err=false){ const e=$(el); e.textContent = msg || ""; e.className = "status " + (err?"err":""); }
+
+/* ====== Load & Save ====== */
+async function loadAll(){
+  setStatus("#loadStatus","Chargement…");
+  try{
+    const res = await fetch(EXEC_URL + "?ts=" + Date.now(), {cache:"no-store"});
+    const text = await res.text();
+    let js; try{ js=JSON.parse(text);}catch{ js=text; }
+    let arr = [];
+    if (Array.isArray(js?.rows)) arr = js.rows;
+    else if (Array.isArray(js?.data)) arr = js.data;
+    else if (Array.isArray(js?.values)) {
+      const vals = js.values;
+      const headers = (vals[0]||[]).map(h=>String(h).trim());
+      for(let i=1;i<vals.length;i++){
+        const o={}; (vals[i]||[]).forEach((v,idx)=> o[headers[idx]||("Col"+idx)] = v );
+        arr.push(o);
+      }
+    } else if (Array.isArray(js)) { arr = js; }
+    rows = arr
+      .filter(o=>o && typeof o==="object")
+      .map(o=>({
+        "Date": parseDateAny(o["Date"]||o["date"]),
+        "Type": (o["Type"]||"").toString().trim(),
+        "Coût (€)": parseNumber(o["Coût (€)"]||o["Cout (€)"]||o["Coût"]||o["Cout"]),
+        "Km": parseNumber(o["Km"]||o["Odomètre"]||o["Kilométrage"]),
+        "Notes": (o["Notes"]||"").toString().trim()
+      }))
+      .filter(o=> Object.values(o).some(v=>v!=="" && v!=null));
+    applyFilters();
+    computeKpis();
+    setStatus("#loadStatus","Chargé ✅");
+  } catch(e){
+    console.error(e);
+    setStatus("#loadStatus","Erreur de chargement", true);
+    showToast("Échec du chargement", false);
+  }
+}
+
+async function saveAll(){
+  setStatus("#saveStatus","Enregistrement…");
+  try{
+    const payload = {
+      rows: rows.map(r=>({
+        "Date": r["Date"] ? fmt.date(r["Date"]) : "",
+        "Type": r["Type"] || "",
+        "Coût (€)": r["Coût (€)"] ?? "",
+        "Km": r["Km"] ?? "",
+        "Notes": r["Notes"] || ""
+      }))
+    };
+    const res = await fetch(EXEC_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const txt = await res.text();
+    if(!res.ok) throw new Error("HTTP "+res.status+" — "+txt.slice(0,120));
+    setStatus("#saveStatus","Enregistré ✅");
+    showToast("Enregistrement réussi ✅", true);
+  } catch(e){
+    console.error(e);
+    setStatus("#saveStatus","Erreur", true);
+    showToast("Échec de l'enregistrement", false);
+  }
+}
+
+/* ====== UI logic ====== */
+function computeKpis(){
+  const total = rows.reduce((s,r)=> s + (parseNumber(r["Coût (€)"])||0), 0);
+  $("#kpiTotal").textContent = fmt.money(total);
+
+  const now = new Date();
+  const month = now.getMonth(), year = now.getFullYear();
+  const monthTotal = rows.reduce((s,r)=>{
+    if(!r.Date) return s;
+    const d = new Date(r.Date);
+    return (d.getMonth()===month && d.getFullYear()===year) ? s + (parseNumber(r["Coût (€)"])||0) : s;
+  }, 0);
+  $("#kpiMonth").textContent = fmt.money(monthTotal);
+
+  $("#kpiCount").textContent = String(rows.length);
+}
+
+function applyFilters(){
+  const type = $("#filterType").value;
+  const q = $("#search").value.trim().toLowerCase();
+  const sort = $("#sortBy").value || "Date.desc";
+  view = rows.filter(r=>{
+    if (type && (r["Type"]||"") !== type) return false;
+    if (q){
+      const hay = [r["Notes"], r["Type"], r["Km"], r["Coût (€)"]].map(x=> (x??"").toString().toLowerCase()).join(" ");
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const [key,dir] = sort.split(".");
+  view.sort((a,b)=>{
+    let va = a[key], vb = b[key];
+    if (key==="Date"){ va = a.Date||""; vb = b.Date||""; }
+    else if (key==="Coût (€)" || key==="Km"){ va = parseNumber(va)||0; vb = parseNumber(vb)||0; }
+    else { va = (va??"").toString(); vb=(vb??"").toString(); }
+    const s = (va>vb) ? 1 : (va<vb) ? -1 : 0;
+    return dir==="asc" ? s : -s;
+  });
+  renderTable();
+}
+
+function renderTable(){
+  const tb = $("#tbl tbody");
+  tb.innerHTML = "";
+  view.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${fmt.date(r["Date"])}</td>
+      <td><span class="badge">${(r["Type"]||"—")}</span></td>
+      <td class="right">${fmt.money(parseNumber(r["Coût (€)"]))}</td>
+      <td class="right">${r["Km"]!=null && r["Km"]!=="" ? parseInt(r["Km"]) : "—"}</td>
+      <td>${(r["Notes"]||"")}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+/* ====== Events ====== */
+$("#formOp").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const dateVal = $("#fDate").value;
+  const typeVal = $("#fType").value.trim();
+  const costVal = parseNumber($("#fCost").value);
+  const kmVal = parseNumber($("#fKm").value);
+  const notesVal = $("#fNotes").value.trim();
+
+  if(!dateVal || !typeVal || costVal==null){ showToast("Champs requis manquants", false); return; }
+
+  const iso = new Date(dateVal+"T12:00:00").toISOString();
+  rows.push({
+    "Date": iso,
+    "Type": typeVal,
+    "Coût (€)": costVal,
+    "Km": kmVal,
+    "Notes": notesVal
+  });
+
+  // reset form
+  $("#formOp").reset();
+  $("#fDate").value = toYMD(new Date()); // pratique: remet aujourd’hui
+  applyFilters();
+  computeKpis();
+  await saveAll();
+});
+
+$("#btnReset").addEventListener("click", ()=>{
+  $("#formOp").reset();
+  $("#fDate").value = toYMD(new Date());
+});
+$("#btnReload").addEventListener("click", loadAll);
+$("#btnSaveAll").addEventListener("click", saveAll);
+$("#filterType").addEventListener("change", applyFilters);
+$("#search").addEventListener("input", applyFilters);
+$("#sortBy").addEventListener("change", applyFilters);
+
+/* ====== Boot ====== */
+(function init(){
+  // date par défaut = aujourd’hui
+  $("#fDate").value = toYMD(new Date());
+  loadAll();
+})();
+</script>
+</body>
+</html>
