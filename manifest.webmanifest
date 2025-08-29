@@ -1,0 +1,21 @@
+{
+  "name": "La maison Rose",
+  "short_name": "Maison Rose",
+  "description": "Outils familiaux : Pronostics, Inventaire, Kangoo, Starway…",
+  "start_url": "/lamaisonrose/index.html",
+  "scope": "/lamaisonrose/",
+  "display": "standalone",
+  "background_color": "#fff7fa",
+  "theme_color": "#e470a2",
+  "icons": [
+    { "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/lamaisonrose/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/lamaisonrose/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Pronostics", "url": "/lamaisonrose/pronostics.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Inventaire bébé", "url": "/lamaisonrose/inventairebb.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Kangoo", "url": "/lamaisonrose/kangoo.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Starway", "url": "/lamaisonrose/starway.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
