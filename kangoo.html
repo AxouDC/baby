@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <link rel="manifest" href="/lamaisonrose/manifest.webmanifest">
+<meta name="theme-color" content="#e470a2">
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/lamaisonrose/icons/icon-192.png">
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kangoo — Suivi (La maison Rose)</title>
@@ -398,6 +406,11 @@ $("#sortBy").addEventListener("change", applyFilters);
   $("#fDate").value = toYMD(new Date());
   loadAll();
 })();
+</script>
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/lamaisonrose/sw.js").catch(console.error);
+  }
 </script>
 </body>
 </html>
