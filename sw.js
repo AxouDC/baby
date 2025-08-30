@@ -5,8 +5,7 @@ const APP_SHELL = [
   "/lamaisonrose/index.html",
   "/lamaisonrose/pronostics.html",
   "/lamaisonrose/inventairebb.html",
-  "/lamaisonrose/kangoo.html",
-  "/lamaisonrose/starway.html",
+  "/lamaisonrose/vehicules.html",
   "/lamaisonrose/manifest.webmanifest"
   // + (facultatif) tes css/js externes si tu en as
 ];
