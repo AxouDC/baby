@@ -16,6 +16,6 @@
     { "name": "Pronostics", "url": "/lamaisonrose/pronostics.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Inventaire bébé", "url": "/lamaisonrose/inventairebb.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Kangoo", "url": "/lamaisonrose/kangoo.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Starway", "url": "/lamaisonrose/starway.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Véhicules", "url": "/lamaisonrose/vehicules.html", "icons": [{ "src": "/lamaisonrose/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
