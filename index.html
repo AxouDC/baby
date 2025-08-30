@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>La maison Rose — Accueil</title>
   <meta name="description" content="La maison Rose — Outils famille : pronostics, inventaire bébé, liste de naissance, etc." />
+  <link rel="manifest" href="/lamaisonrose/manifest.webmanifest">
+<meta name="theme-color" content="#e470a2">
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="/lamaisonrose/icons/icon-192.png">
   <style>
   
 :root{
@@ -100,5 +107,10 @@ button.primary, a.btn-primary{
 
   <footer>© <span id="year"></span> – La maison Rose. Propulsé par GitHub Pages.</footer>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/lamaisonrose/sw.js").catch(console.error);
+  }
+</script>
 </body>
 </html>
